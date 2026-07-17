@@ -181,3 +181,30 @@ http://127.0.0.1:8000/admin
 Use the configured key in the dashboard form.
 
 Do not commit real admin keys.
+
+## Post-deploy validation
+
+After a production-like or guarded VPS deploy, validate the API before announcing that the service is ready:
+
+```bash
+curl -fsS http://127.0.0.1:8000/health
+curl -fsS http://127.0.0.1:8000/ready
+curl -fsS http://127.0.0.1:8000/
+```
+
+Then validate protected admin diagnostics with the configured key:
+
+```bash
+curl -fsS \
+  -H "X-Admin-API-Key: <strong-admin-api-key>" \
+  http://127.0.0.1:8000/admin/diagnostics
+```
+
+For guarded VPS deployments, also inspect API and worker logs through the Docker guard using the real Compose container names:
+
+```bash
+/opt/data/ops/docker-ops/docker-ops logs monitor-comunitario-api-1 --tail 120
+/opt/data/ops/docker-ops/docker-ops logs monitor-comunitario-worker-1 --tail 120
+```
+
+If the API port is not reachable from the agent container, validate from the host network or through the configured reverse proxy after it is added.
