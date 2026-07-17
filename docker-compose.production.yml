@@ -1,5 +1,6 @@
 services:
   migrate:
+    container_name: monitor-comunitario-migrate
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,6 +10,7 @@ services:
     restart: "no"
 
   api:
+    container_name: monitor-comunitario-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,6 +22,13 @@ services:
       - .env.production
     ports:
       - "8000:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitor-comunitario.rule=Host(`monitorcomunitario.soberania.cloud`)"
+      - "traefik.http.routers.monitor-comunitario.entrypoints=websecure"
+      - "traefik.http.routers.monitor-comunitario.tls=true"
+      - "traefik.http.routers.monitor-comunitario.tls.certresolver=letsencrypt"
+      - "traefik.http.services.monitor-comunitario.loadbalancer.server.port=8000"
     volumes:
       - ./snapshots:/app/snapshots
     depends_on:
@@ -34,6 +43,7 @@ services:
     restart: unless-stopped
 
   worker:
+    container_name: monitor-comunitario-worker
     build:
       context: .
       dockerfile: Dockerfile
