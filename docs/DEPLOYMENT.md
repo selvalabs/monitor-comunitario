@@ -40,13 +40,15 @@ APP_TIMEZONE=America/Sao_Paulo
 DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:5432/<database>?sslmode=require
 ```
 
-For Supabase, prefer the pooled connection string when deploying through containers.
+For Supabase, prefer the pooled connection string when deploying through containers, especially on VPS hosts without IPv6 access to the direct database hostname.
 
 Example format:
 
 ```env
-DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<password>@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require
+DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<password>@aws-<pooler-index>-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require
 ```
+
+Use the pooler host shown by the Supabase project dashboard/API for the specific project. Do not infer the pooler index from another project.
 
 ### Admin access
 
@@ -87,6 +89,40 @@ Stop services:
 ```powershell
 docker compose -f docker-compose.production.yml --env-file .env.production down
 ```
+
+## Guarded VPS deployment
+
+On the Venusiana VPS, deployment can be executed through the guarded `docker-ops` wrapper instead of direct Docker daemon access:
+
+```bash
+VENUSIANA_CHANNEL_PLATFORM=telegram /opt/data/ops/docker-ops/docker-ops compose-up monitor-comunitario
+```
+
+The guard is expected to:
+
+```text
+run only the fixed project path
+use docker-compose.production.yml
+use .env.production with file mode 600
+require Telegram admin or approval before deploy
+allow status/logs access for the deployed containers
+```
+
+The first successful guarded deploy should finish with:
+
+```text
+DOCKER_OPS_COMPOSE_UP_OK project=monitor-comunitario
+```
+
+Docker Compose may create runtime container names with a numeric suffix:
+
+```text
+monitor-comunitario-api-1
+monitor-comunitario-worker-1
+monitor-comunitario-migrate-1
+```
+
+Ensure the Docker guard allowlist matches the real Compose container names before relying on `status` or `logs` checks.
 
 ## Migration flow
 
@@ -210,6 +246,18 @@ Show migration logs:
 docker compose -f docker-compose.production.yml --env-file .env.production logs migrate
 ```
 
+When using the guarded VPS wrapper, use the real container names reported by Compose or `docker-ops ps`:
+
+```bash
+/opt/data/ops/docker-ops/docker-ops ps
+/opt/data/ops/docker-ops/docker-ops status monitor-comunitario-api-1
+/opt/data/ops/docker-ops/docker-ops logs monitor-comunitario-api-1 --tail 120
+/opt/data/ops/docker-ops/docker-ops status monitor-comunitario-worker-1
+/opt/data/ops/docker-ops/docker-ops logs monitor-comunitario-worker-1 --tail 120
+```
+
+If `docker-ops status monitor-comunitario-api` returns an image-like object or `No such container`, check whether Compose created `monitor-comunitario-api-1` instead. If the suffixed name returns `container not allowlisted`, update the guard allowlist before continuing validation.
+
 Restart API:
 
 ```powershell
@@ -229,6 +277,7 @@ Before a real deployment:
 ```text
 [ ] .env.production exists and is not committed
 [ ] DATABASE_URL points to the production database
+[ ] Supabase deployments use the project-specific pooler host when IPv4 is required
 [ ] ADMIN_API_KEY is strong and private
 [ ] migrations run successfully
 [ ] /health returns 200
@@ -236,6 +285,7 @@ Before a real deployment:
 [ ] /admin opens by direct URL
 [ ] /admin/diagnostics works with X-Admin-API-Key
 [ ] worker logs show scheduled execution
+[ ] docker-ops allowlist matches the real Compose container names when using guarded VPS deploy
 [ ] snapshots volume is writable
 ```
 
