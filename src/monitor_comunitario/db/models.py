@@ -39,6 +39,7 @@ class User(Base):
     number: Mapped[str] = mapped_column(String(40), default="")
     zipcode: Mapped[str] = mapped_column(String(20), default="")
     accept_municipality_wide_alerts: Mapped[bool] = mapped_column(Boolean, default=True)
+    notifications_approved: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     access_code_hash: Mapped[str] = mapped_column(String(128), default="")
     access_code_created_at: Mapped[datetime | None] = mapped_column(

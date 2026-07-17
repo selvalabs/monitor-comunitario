@@ -56,6 +56,9 @@ def match_user_to_notice(user: User, notice: OutageNotice) -> MatchResult:
     if user.is_active is False:
         return MatchResult(MatchLevel.NONE, 0.0, "User is inactive.")
 
+    if user.notifications_approved is False:
+        return MatchResult(MatchLevel.NONE, 0.0, "User is not approved for notifications.")
+
     if not _exact_or_fuzzy_municipality_match(user, notice):
         return MatchResult(MatchLevel.NONE, 0.0, "Municipality does not match.")
 
@@ -224,8 +227,15 @@ def create_app_notification(
 
 
 def run_matching_cycle(session: Session) -> MatchingSummary:
-    """Match all active users against all persisted notices."""
-    users = list(session.scalars(select(User).where(User.is_active.is_(True))).all())
+    """Match all active, notification-approved users against persisted notices."""
+    users = list(
+        session.scalars(
+            select(User).where(
+                User.is_active.is_(True),
+                User.notifications_approved.is_(True),
+            )
+        ).all()
+    )
     notices = list(session.scalars(select(OutageNotice)).all())
 
     matches_created = 0

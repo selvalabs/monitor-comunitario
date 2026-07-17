@@ -647,3 +647,8 @@ dd {
   }
 }
 /* === End admin dashboard polish inline === */
+
+.muted-text {
+  color: var(--muted);
+  font-weight: 800;
+}

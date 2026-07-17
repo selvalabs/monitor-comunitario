@@ -19,6 +19,7 @@ def test_create_app_notification_deduplicates_by_user_notice_channel() -> None:
             municipality="Florianópolis",
             neighborhood="Campeche",
             street="Avenida Pequeno Príncipe",
+            notifications_approved=True,
         )
         notice = OutageNotice(
             source_url="https://example.com",
@@ -63,6 +64,7 @@ def test_persist_match_deduplicates_by_user_notice() -> None:
             municipality="Florianópolis",
             neighborhood="Campeche",
             street="Avenida Pequeno Príncipe",
+            notifications_approved=True,
         )
         notice = OutageNotice(
             source_url="https://example.com",
