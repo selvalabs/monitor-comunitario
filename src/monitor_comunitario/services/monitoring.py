@@ -10,6 +10,7 @@ from monitor_comunitario.db.models import MonitoringRun, MonitoringRunStatus, ut
 from monitor_comunitario.db.session import SessionLocal
 from monitor_comunitario.scraper.celesc_page import fetch_celesc_municipality_pages
 from monitor_comunitario.scraper.parser import parse_outage_notices_from_text
+from monitor_comunitario.services.hermes_events import create_hermes_event
 from monitor_comunitario.services.matching import run_matching_cycle
 from monitor_comunitario.services.outage_notices import persist_parsed_notices
 
@@ -99,4 +100,16 @@ def run_monitoring_cycle(limit: int | None = None) -> MonitoringCycleResult:
 
         except Exception as exc:
             failed_run = mark_run_failed(session, run, exc)
+            create_hermes_event(
+                session=session,
+                event_type="worker_failed",
+                channel="admin",
+                recipient_phone="",
+                intent="UNKNOWN_ESCALATE",
+                template_key="human_escalation_v1",
+                payload={
+                    "monitoring_run_id": failed_run.id,
+                    "error": str(exc),
+                },
+            )
             return MonitoringCycleResult(run=failed_run)
