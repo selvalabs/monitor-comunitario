@@ -1,7 +1,7 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from monitor_comunitario.db.models import Base, OutageNotice, User
+from monitor_comunitario.db.models import Base, HermesEvent, OutageNotice, User
 from monitor_comunitario.matcher.scoring import MatchLevel, MatchResult
 from monitor_comunitario.services.matching import create_app_notification, persist_match
 
@@ -44,10 +44,17 @@ def test_create_app_notification_deduplicates_by_user_notice_channel() -> None:
 
         first_notification, first_created = create_app_notification(session, user, notice, result)
         second_notification, second_created = create_app_notification(session, user, notice, result)
+        hermes_events = list(session.scalars(select(HermesEvent)).all())
 
     assert first_created is True
     assert second_created is False
     assert first_notification.id == second_notification.id
+    assert len(hermes_events) == 1
+    assert hermes_events[0].event_type == "notification_ready"
+    assert hermes_events[0].channel == "app"
+    assert hermes_events[0].recipient_phone == "5548999999999"
+    assert hermes_events[0].intent == "ALERT_EXPLANATION"
+    assert hermes_events[0].template_key == "alert_explanation_v1"
 
 
 def test_persist_match_deduplicates_by_user_notice() -> None:

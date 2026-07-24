@@ -11,6 +11,7 @@ from monitor_comunitario.matcher.normalizer import (
     normalize_text,
 )
 from monitor_comunitario.matcher.scoring import MatchLevel, MatchResult, score_text
+from monitor_comunitario.services.hermes_events import create_hermes_event
 
 
 @dataclass(frozen=True)
@@ -219,6 +220,23 @@ def create_app_notification(
     session.add(notification)
     session.commit()
     session.refresh(notification)
+
+    create_hermes_event(
+        session=session,
+        event_type="notification_ready",
+        channel="app",
+        recipient_phone=user.phone,
+        intent="ALERT_EXPLANATION",
+        template_key="alert_explanation_v1",
+        payload={
+            "notification_id": notification.id,
+            "user_id": user.id,
+            "outage_notice_id": notice.id,
+            "municipality": notice.municipality,
+            "match_level": result.level.value,
+            "match_score": result.score,
+        },
+    )
 
     return notification, True
 
