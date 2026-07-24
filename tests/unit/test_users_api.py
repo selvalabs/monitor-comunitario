@@ -48,6 +48,7 @@ def test_create_and_get_user(client: TestClient) -> None:
     assert created["id"] >= 1
     assert created["name"] == payload["name"]
     assert created["municipality"] == payload["municipality"]
+    assert created["notifications_approved"] is False
     assert created["is_active"] is True
 
     public_get_response = client.get(f"/users/{created['id']}")
@@ -98,6 +99,29 @@ def test_update_user(client: TestClient) -> None:
     assert admin_update_response.status_code == 200
     assert admin_update_response.json()["neighborhood"] == "Kobrasol"
     assert admin_update_response.json()["street"] == "Rua Koesa"
+
+
+def test_admin_can_approve_user_notifications(client: TestClient) -> None:
+    create_response = client.post(
+        "/users",
+        json={
+            "name": "Teste Aprovação",
+            "phone": "5548999999996",
+            "municipality": "Florianópolis",
+        },
+    )
+    user_id = create_response.json()["id"]
+
+    assert create_response.json()["notifications_approved"] is False
+
+    admin_update_response = client.patch(
+        f"/admin/users/{user_id}",
+        headers=admin_headers(),
+        json={"notifications_approved": True},
+    )
+
+    assert admin_update_response.status_code == 200
+    assert admin_update_response.json()["notifications_approved"] is True
 
 
 def test_deactivate_user(client: TestClient) -> None:

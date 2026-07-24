@@ -10,6 +10,7 @@ def test_match_user_to_notice_by_street() -> None:
         municipality="Florianópolis",
         neighborhood="Campeche",
         street="Avenida Pequeno Príncipe",
+        notifications_approved=True,
     )
     notice = OutageNotice(
         source_url="https://example.com",
@@ -33,6 +34,7 @@ def test_match_user_to_notice_by_neighborhood_when_street_missing() -> None:
         municipality="Florianópolis",
         neighborhood="Campeche",
         street="",
+        notifications_approved=True,
     )
     notice = OutageNotice(
         source_url="https://example.com",
@@ -56,6 +58,7 @@ def test_match_user_to_notice_returns_none_for_other_municipality() -> None:
         municipality="São José",
         neighborhood="Kobrasol",
         street="Rua Koesa",
+        notifications_approved=True,
     )
     notice = OutageNotice(
         source_url="https://example.com",
@@ -70,3 +73,28 @@ def test_match_user_to_notice_returns_none_for_other_municipality() -> None:
     result = match_user_to_notice(user, notice)
 
     assert result.level == MatchLevel.NONE
+
+
+def test_match_user_to_notice_requires_notification_approval() -> None:
+    user = User(
+        name="Carlos",
+        phone="5548999999999",
+        municipality="Florianópolis",
+        neighborhood="Campeche",
+        street="Avenida Pequeno Príncipe",
+        notifications_approved=False,
+    )
+    notice = OutageNotice(
+        source_url="https://example.com",
+        municipality="FLORIANOPOLIS",
+        neighborhood="Campeche",
+        street="Avenida Pequeno Príncipe",
+        description="Manutenção preventiva.",
+        raw_text="Bairro: Campeche\nRua: Avenida Pequeno Príncipe",
+        content_hash="approval",
+    )
+
+    result = match_user_to_notice(user, notice)
+
+    assert result.level == MatchLevel.NONE
+    assert result.reason == "User is not approved for notifications."
