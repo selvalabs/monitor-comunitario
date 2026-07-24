@@ -2,10 +2,13 @@
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from monitor_comunitario.api.main import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
+from monitor_comunitario.db.models import HermesEvent
+from monitor_comunitario.db.session import SessionLocal
 
 ADMIN_API_KEY = "test-admin-key"
 
@@ -62,6 +65,38 @@ def test_create_and_get_user(client: TestClient) -> None:
 
     assert admin_get_response.status_code == 200
     assert admin_get_response.json()["id"] == created["id"]
+
+
+def test_create_user_emits_pending_approval_hermes_event(client: TestClient) -> None:
+    response = client.post(
+        "/users",
+        json={
+            "name": "Morador Pendente",
+            "phone": "5548999999901",
+            "municipality": "Florianópolis",
+            "neighborhood": "Campeche",
+        },
+    )
+
+    assert response.status_code == 201
+    created = response.json()
+    assert created["notifications_approved"] is False
+
+    with SessionLocal() as session:
+        event = session.scalar(
+            select(HermesEvent).where(
+                HermesEvent.event_type == "admin_approval_pending",
+                HermesEvent.payload_json.contains(f'"user_id":{created["id"]}'),
+            )
+        )
+
+    assert event is not None
+    assert event.status == "created"
+    assert event.channel == "admin"
+    assert event.intent == "UNKNOWN_ESCALATE"
+    assert event.template_key == "human_escalation_v1"
+    assert f'"user_id":{created["id"]}' in event.payload_json
+    assert '"municipality":"Florian\\u00f3polis"' in event.payload_json
 
 
 def test_admin_user_routes_require_api_key(client: TestClient) -> None:

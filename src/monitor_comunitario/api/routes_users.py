@@ -9,6 +9,7 @@ from monitor_comunitario.api.security import require_admin_api_key
 from monitor_comunitario.db.models import User
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.users import UserCreate, UserCreatedRead, UserRead, UserUpdate
+from monitor_comunitario.services.hermes_events import create_hermes_event
 from monitor_comunitario.services.member_access import generate_access_code, hash_access_code
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -42,6 +43,21 @@ def create_user(
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    if not user.notifications_approved:
+        create_hermes_event(
+            session=session,
+            event_type="admin_approval_pending",
+            channel="admin",
+            recipient_phone="",
+            intent="UNKNOWN_ESCALATE",
+            template_key="human_escalation_v1",
+            payload={
+                "user_id": user.id,
+                "municipality": user.municipality,
+                "neighborhood": user.neighborhood,
+            },
+        )
 
     return UserCreatedRead(
         **UserRead.model_validate(user).model_dump(),
