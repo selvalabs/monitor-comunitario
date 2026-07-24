@@ -13,6 +13,7 @@ from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_page,
 )
 from monitor_comunitario.scraper.parser import extract_relevant_outage_section
+from monitor_comunitario.services.hermes_processing import process_created_hermes_events
 from monitor_comunitario.services.matching import run_matching_cycle
 from monitor_comunitario.services.monitoring import run_monitoring_cycle
 
@@ -244,6 +245,26 @@ def match_notices() -> None:
     console.print(f"Notifications created: {summary.notifications_created}")
 
 
+@app.command("hermes-process")
+def hermes_process(
+    limit: int = typer.Option(
+        50,
+        "--limit",
+        help="Maximum number of created Hermes events to process locally.",
+    ),
+) -> None:
+    """Process created Hermes events locally without external delivery."""
+    init_db()
+
+    with SessionLocal() as session:
+        summary = process_created_hermes_events(session, limit=limit)
+
+    console.print("[bold green]Hermes local processing completed[/bold green]")
+    console.print(f"Events checked: {summary.events_checked}")
+    console.print(f"Events processed: {summary.events_processed}")
+    console.print(f"Events failed: {summary.events_failed}")
+
+
 @app.command()
 def worker() -> None:
     """Start the scheduled monitoring worker."""
@@ -293,4 +314,3 @@ def snapshots() -> None:
 
 if __name__ == "__main__":
     app()
-
