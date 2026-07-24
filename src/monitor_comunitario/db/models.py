@@ -27,6 +27,14 @@ class MonitoringRunStatus(StrEnum):
     FAILED = "failed"
 
 
+class HermesEventStatus(StrEnum):
+    CREATED = "created"
+    QUEUED = "queued"
+    PROCESSED = "processed"
+    FAILED = "failed"
+    ESCALATED = "escalated"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -128,3 +136,29 @@ class MonitoringRun(Base):
     notifications_created: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str] = mapped_column(Text, default="")
     raw_snapshot_path: Mapped[str] = mapped_column(String(500), default="")
+
+
+class HermesEvent(Base):
+    __tablename__ = "hermes_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(80), index=True)
+    status: Mapped[str] = mapped_column(
+        String(40),
+        default=HermesEventStatus.CREATED.value,
+        index=True,
+    )
+    source: Mapped[str] = mapped_column(String(80), default="monitor_comunitario")
+    channel: Mapped[str] = mapped_column(String(40), default="")
+    recipient_phone: Mapped[str] = mapped_column(String(40), default="")
+    intent: Mapped[str] = mapped_column(String(80), default="")
+    template_key: Mapped[str] = mapped_column(String(120), default="")
+    payload_json: Mapped[str] = mapped_column(Text, default="{}")
+    llm_allowed: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_message: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        index=True,
+    )
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
