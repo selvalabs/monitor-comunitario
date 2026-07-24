@@ -29,6 +29,7 @@ const elements = {
   runFinishedAt: document.querySelector("#run-finished-at"),
   runErrorMessage: document.querySelector("#run-error-message"),
   runsTableBody: document.querySelector("#runs-table-body"),
+  usersTableBody: document.querySelector("#users-table-body"),
 };
 
 function setStatus(message, variant = "info") {
@@ -178,6 +179,35 @@ function renderRunsTable(runs) {
     .join("");
 }
 
+function renderUsersTable(users) {
+  if (!users.length) {
+    elements.usersTableBody.innerHTML = '<tr><td colspan="6">Nenhum cadastro encontrado.</td></tr>';
+    return;
+  }
+
+  elements.usersTableBody.innerHTML = users
+    .map((user) => {
+      const approved = Boolean(user.notifications_approved);
+      const active = Boolean(user.is_active);
+      const status = `${active ? "ativo" : "inativo"} · ${approved ? "aprovado" : "pendente"}`;
+      const action = approved
+        ? '<span class="muted-text">liberado</span>'
+        : `<button class="button button-primary approve-user" type="button" data-user-id="${user.id}">Aprovar</button>`;
+
+      return `
+        <tr>
+          <td>${user.id}</td>
+          <td>${formatValue(user.name)}</td>
+          <td>${formatValue(user.phone)}</td>
+          <td>${formatValue(user.municipality)}</td>
+          <td>${status}</td>
+          <td>${action}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
 async function refreshDashboard() {
   setStatus("Atualizando dados operacionais...");
 
@@ -194,10 +224,33 @@ async function refreshDashboard() {
     fetchJson("/admin/diagnostics", { headers: adminHeaders() }),
     fetchJson("/admin/runs?limit=10", { headers: adminHeaders() }),
   ]);
+  const users = await fetchJson("/admin/users?include_inactive=true", {
+    headers: adminHeaders(),
+  });
 
   renderDiagnostics(diagnostics);
   renderRunsTable(runs);
+  renderUsersTable(users);
   setStatus("Dashboard atualizado com sucesso.", "success");
+}
+
+async function approveUser(userId) {
+  if (!getAdminKey()) {
+    setStatus("Informe a chave administrativa antes de aprovar cadastros.", "warning");
+    return;
+  }
+
+  await fetchJson(`/admin/users/${userId}`, {
+    method: "PATCH",
+    headers: {
+      ...adminHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ notifications_approved: true }),
+  });
+
+  setStatus(`Cadastro #${userId} aprovado para notificações.`, "success");
+  await refreshDashboard();
 }
 
 async function triggerManualRun() {
@@ -262,6 +315,20 @@ function bindEvents() {
   elements.runButton.addEventListener("click", async () => {
     try {
       await triggerManualRun();
+    } catch (error) {
+      setStatus(error.message, "error");
+    }
+  });
+
+  elements.usersTableBody.addEventListener("click", async (event) => {
+    const button = event.target.closest(".approve-user");
+
+    if (!button) {
+      return;
+    }
+
+    try {
+      await approveUser(button.dataset.userId);
     } catch (error) {
       setStatus(error.message, "error");
     }

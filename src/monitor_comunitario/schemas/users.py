@@ -27,6 +27,7 @@ class UserUpdate(BaseModel):
     number: str | None = Field(default=None, max_length=40)
     zipcode: str | None = Field(default=None, max_length=20)
     accept_municipality_wide_alerts: bool | None = None
+    notifications_approved: bool | None = None
     is_active: bool | None = None
 
 
@@ -34,6 +35,7 @@ class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    notifications_approved: bool
     is_active: bool
     created_at: datetime
     updated_at: datetime
