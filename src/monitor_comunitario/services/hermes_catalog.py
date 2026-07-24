@@ -34,6 +34,7 @@ class HermesTemplate:
 HERMES_EVENT_TYPES: frozenset[str] = frozenset(
     {
         "notification_ready",
+        "admin_approval_pending",
         "support_message_received",
         "support_response_ready",
         "admin_summary_requested",
