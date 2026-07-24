@@ -29,3 +29,36 @@ def test_mask_database_url_keeps_url_without_credentials() -> None:
     database_url = "postgresql://db.example.com:5432/app"
 
     assert mask_database_url(database_url) == database_url
+
+
+def test_cli_hermes_process_command_runs(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from typer.testing import CliRunner
+
+    from monitor_comunitario import cli
+
+    class FakeSession:
+        def __enter__(self):  # type: ignore[no-untyped-def]
+            return self
+
+        def __exit__(self, *_args):  # type: ignore[no-untyped-def]
+            return None
+
+    class FakeSummary:
+        events_checked = 2
+        events_processed = 2
+        events_failed = 0
+
+    monkeypatch.setattr(cli, "init_db", lambda: None)
+    monkeypatch.setattr(cli, "SessionLocal", lambda: FakeSession())
+    monkeypatch.setattr(
+        cli,
+        "process_created_hermes_events",
+        lambda session, limit: FakeSummary(),
+    )
+
+    result = CliRunner().invoke(cli.app, ["hermes-process", "--limit", "5"])
+
+    assert result.exit_code == 0
+    assert "Hermes local processing completed" in result.output
+    assert "Events checked: 2" in result.output
+    assert "Events processed: 2" in result.output
