@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from monitor_comunitario.api.routes_admin import router as admin_router
+from monitor_comunitario.api.routes_hermes import admin_router as admin_hermes_router
 from monitor_comunitario.api.routes_member import router as member_router
 from monitor_comunitario.api.routes_notifications import admin_router as admin_notifications_router
 from monitor_comunitario.api.routes_outage_notices import router as outage_notices_router
@@ -49,6 +50,7 @@ app.include_router(outage_notices_router)
 app.include_router(admin_router)
 app.include_router(admin_users_router)
 app.include_router(admin_notifications_router)
+app.include_router(admin_hermes_router)
 
 
 @app.get("/health")
