@@ -1,8 +1,8 @@
 # Hermes agent bootstrap proposal
 
 Issue: #37  
-Status: Initial proposal  
-Last updated: 2026-07-24
+Status: Implemented through internal escalation/dashboard bootstrap  
+Last updated: 2026-07-25
 
 ## Purpose
 
@@ -154,7 +154,7 @@ The bootstrap enforces this in `create_hermes_event`.
 
 ### Phase 1 - Internal event audit
 
-Implemented in the bootstrap branch:
+Implemented:
 
 - deterministic catalog;
 - `hermes_events` table;
@@ -165,10 +165,15 @@ No external delivery.
 
 ### Phase 2 - Producers
 
-Connect existing app behavior to Hermes events:
+Implemented producers:
 
 - create `notification_ready` when an in-app notification is created;
-- create `scraper_failed`, `parser_failed` or `worker_failed` from monitoring failures;
+- create `worker_failed` from monitoring failures;
+- create `admin_approval_pending` when a new resident registration starts unapproved.
+
+Still future:
+
+- create `scraper_failed` or `parser_failed` if scraper/parser errors are split into finer event types;
 - create privacy/support events from future resident support entrypoints.
 
 This phase still may avoid external delivery.
@@ -185,6 +190,12 @@ PATCH /admin/hermes/events/{event_id}/status
 
 These endpoints must require `X-Admin-API-Key`.
 
+Implemented in the backend and dashboard:
+
+- list recent Hermes events;
+- inspect one Hermes event through the API;
+- mark events manually as `processed` or `escalated` from the dashboard.
+
 ### Phase 4 - Local Hermes poller
 
 Add a local worker or CLI command that reads `created` events and transitions them to:
@@ -198,6 +209,8 @@ escalated
 
 At first, this can process only `app` or `noop` channels and write status. It should not send external messages.
 
+Implemented as `monitor-comunitario hermes-process`.
+
 ### Phase 5 - Internal escalation
 
 Add Telegram escalation for Frank behind configuration:
@@ -209,6 +222,8 @@ HERMES_TELEGRAM_CHAT_ID=
 ```
 
 Only internal escalation events should use this channel.
+
+Implemented behind configuration. Telegram remains disabled by default.
 
 ### Phase 6 - WhatsApp delivery adapter
 
