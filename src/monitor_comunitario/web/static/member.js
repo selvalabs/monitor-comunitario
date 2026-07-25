@@ -35,6 +35,19 @@ function clearMemberSession() {
   setMemberStatus("Sessão limpa. Informe telefone e código para acessar novamente.");
 }
 
+function buildNotificationSummary(notification) {
+  const message = String(notification.message || "").trim();
+
+  if (!message) {
+    return "Alerta registrado para este cadastro.";
+  }
+
+  const firstSentence = message.split(/(?<=[.!?])\s+/)[0];
+  const summary = firstSentence.length <= 180 ? firstSentence : `${firstSentence.slice(0, 177)}...`;
+
+  return summary || "Alerta registrado para este cadastro.";
+}
+
 function renderNotifications(notifications) {
   memberNotifications.innerHTML = "";
 
@@ -53,10 +66,21 @@ function renderNotifications(notifications) {
     const date = document.createElement("small");
     date.textContent = new Date(notification.created_at).toLocaleString("pt-BR");
 
-    const message = document.createElement("p");
-    message.textContent = notification.message;
+    const summary = document.createElement("p");
+    summary.className = "notification-summary";
+    summary.textContent = buildNotificationSummary(notification);
 
-    card.append(title, date, message);
+    const details = document.createElement("details");
+    details.className = "notification-original";
+
+    const detailsSummary = document.createElement("summary");
+    detailsSummary.textContent = "Texto original da Celesc";
+
+    const message = document.createElement("p");
+    message.textContent = notification.message || "Texto original indisponível.";
+
+    details.append(detailsSummary, message);
+    card.append(title, date, summary, details);
     memberNotifications.appendChild(card);
   }
 }

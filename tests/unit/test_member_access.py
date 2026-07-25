@@ -140,3 +140,24 @@ def test_member_page_and_static_assets_are_served() -> None:
 
     assert style_response.status_code == 200
     assert "member-main" in style_response.text
+
+
+def test_member_javascript_renders_alert_summary_with_original_details() -> None:
+    with TestClient(app) as test_client:
+        response = test_client.get("/static/member.js")
+
+    assert response.status_code == 200
+    assert "/member/access" in response.text
+    assert "buildNotificationSummary" in response.text
+    assert "notification-summary" in response.text
+    assert "Texto original da Celesc" in response.text
+    assert 'document.createElement("details")' in response.text
+
+
+def test_member_stylesheet_supports_readable_notification_details() -> None:
+    with TestClient(app) as test_client:
+        response = test_client.get("/static/member.css")
+
+    assert response.status_code == 200
+    assert ".notification-summary" in response.text
+    assert ".notification-original" in response.text

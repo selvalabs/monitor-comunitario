@@ -285,6 +285,28 @@ dd {
   color: var(--muted);
 }
 
+.notification-summary {
+  margin: 0.75rem 0 0;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.notification-original {
+  margin-top: 0.85rem;
+  border-top: 1px dashed var(--border);
+  padding-top: 0.75rem;
+}
+
+.notification-original summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.notification-original p {
+  white-space: pre-wrap;
+}
+
 .empty-state {
   color: var(--muted);
   font-weight: 700;
