@@ -2,6 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from monitor_comunitario.db.models import HermesEventStatus
+
+
+class HermesEventStatusUpdate(BaseModel):
+    status: HermesEventStatus
+
 
 class HermesEventRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
