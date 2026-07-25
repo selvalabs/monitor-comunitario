@@ -15,6 +15,30 @@ def test_home_page_returns_public_frontend() -> None:
     assert "consent-banner" in response.text
 
 
+def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
+    with TestClient(app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert 'class="path-panel path-panel-primary"' in response.text
+    assert 'class="path-panel path-panel-secondary"' in response.text
+    assert "Cadastrar um endereço" in response.text
+    assert "Entrar com telefone e código privado" in response.text
+    assert "consulta por ID" not in response.text
+    assert "Use este código junto com seu telefone" in response.text
+    assert "access-code-panel" in response.text
+
+
+def test_public_javascript_preserves_registration_and_access_code_contract() -> None:
+    with TestClient(app) as client:
+        response = client.get("/static/app.js")
+
+    assert response.status_code == 200
+    assert 'fetch("/users"' in response.text
+    assert "copyAccessCode" in response.text
+    assert "accessCodePanel.focus()" in response.text
+
+
 def test_static_stylesheet_is_served() -> None:
     with TestClient(app) as client:
         response = client.get("/static/styles.css")
