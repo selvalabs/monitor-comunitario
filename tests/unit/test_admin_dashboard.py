@@ -12,6 +12,8 @@ def test_admin_dashboard_page_is_served_by_direct_url() -> None:
     assert "ADMIN_API_KEY" in response.text
     assert "sessionStorage" in response.text
     assert "X-Admin-API-Key" in response.text
+    assert "theme-selector" in response.text
+    assert "/static/preferences.js" in response.text
     assert "test-admin-key" not in response.text
 
 

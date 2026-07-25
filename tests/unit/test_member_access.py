@@ -133,6 +133,8 @@ def test_member_page_and_static_assets_are_served() -> None:
     assert page_response.status_code == 200
     assert "Área do morador" in page_response.text
     assert "Telefone + código" in page_response.text
+    assert "theme-selector" in page_response.text
+    assert "/static/preferences.js" in page_response.text
 
     assert script_response.status_code == 200
     assert "sessionStorage" in script_response.text

@@ -13,6 +13,8 @@ def test_home_page_returns_public_frontend() -> None:
     assert "Política de Privacidade" in response.text
     assert "accept_legal_terms" in response.text
     assert "consent-banner" in response.text
+    assert "theme-selector" in response.text
+    assert "/static/preferences.js" in response.text
 
 
 def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
@@ -45,6 +47,17 @@ def test_static_stylesheet_is_served() -> None:
 
     assert response.status_code == 200
     assert "--accent" in response.text
+
+
+def test_preferences_javascript_supports_global_theme_selector() -> None:
+    with TestClient(app) as client:
+        response = client.get("/static/preferences.js")
+
+    assert response.status_code == 200
+    assert "monitor-comunitario:theme" in response.text
+    assert "prefers-color-scheme: dark" in response.text
+    assert "applyTheme" in response.text
+    assert "theme-selector" in response.text
 
 
 def test_public_config_is_served_without_secret_values() -> None:

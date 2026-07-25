@@ -20,7 +20,17 @@
             <small>área do morador</small>
           </span>
         </a>
-        <a class="nav-link" href="/">Cadastro público</a>
+        <div class="nav-actions">
+          <a class="nav-link" href="/">Cadastro público</a>
+          <label class="preference-control" for="theme-selector">
+            Tema
+            <select id="theme-selector" name="theme">
+              <option value="system">Sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+            </select>
+          </label>
+        </div>
       </nav>
     </header>
 
@@ -115,6 +125,7 @@
       </section>
     </main>
 
+    <script src="/static/preferences.js" defer></script>
     <script src="/static/member.js" defer></script>
   </body>
 </html>

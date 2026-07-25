@@ -17,6 +17,22 @@
   --radius-sm: 12px;
 }
 
+:root[data-theme="dark"] {
+  --bg: #141d1b;
+  --surface: #20302d;
+  --surface-soft: #172522;
+  --text: #edf4f1;
+  --muted: #a8b8b3;
+  --border: #36504a;
+  --accent: #8ac7b7;
+  --accent-strong: #b5ded2;
+  --accent-soft: #1d3b35;
+  --danger: #ff9b9b;
+  --success: #97d6ad;
+  --warning: #e0be66;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -84,6 +100,34 @@ a {
   color: var(--accent);
   font-weight: 800;
   text-decoration: none;
+}
+
+.nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.preference-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.preference-control select {
+  width: auto;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  padding: 0.45rem 0.65rem;
 }
 
 .admin-main {
@@ -382,6 +426,15 @@ th {
   --admin-shadow: 8px 8px 0 rgba(31, 45, 43, 0.1);
 }
 
+:root[data-theme="dark"] {
+  --admin-bg: #121b19;
+  --admin-ink: #edf4f1;
+  --admin-panel: rgba(28, 43, 39, 0.94);
+  --admin-line: rgba(168, 184, 179, 0.24);
+  --admin-grid: rgba(138, 199, 183, 0.08);
+  --admin-shadow: 8px 8px 0 rgba(0, 0, 0, 0.24);
+}
+
 body {
   background:
     linear-gradient(var(--admin-grid) 1px, transparent 1px),
@@ -638,6 +691,12 @@ dd {
   .hero-card,
   .auth-card {
     grid-template-columns: 1fr;
+  }
+
+  .admin-nav,
+  .nav-actions {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .status-grid,
