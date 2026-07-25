@@ -44,6 +44,19 @@ def test_admin_dashboard_has_hermes_events_table() -> None:
     assert response.status_code == 200
     assert "Eventos Hermes" in response.text
     assert 'id="hermes-events-table-body"' in response.text
+    assert "<th>Ação</th>" in response.text
+
+
+def test_admin_dashboard_javascript_updates_hermes_event_status() -> None:
+    with TestClient(app) as client:
+        response = client.get("/static/admin.js")
+
+    assert response.status_code == 200
+    assert "updateHermesEventStatus" in response.text
+    assert "/admin/hermes/events/${eventId}/status" in response.text
+    assert 'method: "PATCH"' in response.text
+    assert '"Content-Type": "application/json"' in response.text
+    assert "mark-hermes-event" in response.text
 
 
 def test_admin_dashboard_stylesheet_is_served() -> None:
