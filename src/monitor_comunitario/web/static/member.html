@@ -21,13 +21,23 @@
           </span>
         </a>
         <div class="nav-actions">
-          <a class="nav-link" href="/">Cadastro público</a>
+          <a class="nav-link" href="/" data-i18n="nav.public">Cadastro público</a>
           <label class="preference-control" for="theme-selector">
-            Tema
+            <span data-i18n="common.theme">Tema</span>
             <select id="theme-selector" name="theme">
-              <option value="system">Sistema</option>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
+              <option value="system" data-i18n="common.theme.system">Sistema</option>
+              <option value="light" data-i18n="common.theme.light">Claro</option>
+              <option value="dark" data-i18n="common.theme.dark">Escuro</option>
+            </select>
+          </label>
+          <label class="preference-control" for="language-selector">
+            <span data-i18n="common.language">Idioma</span>
+            <select id="language-selector" name="language">
+              <option value="pt" data-i18n="common.language.pt">Português</option>
+              <option value="en" data-i18n="common.language.en">English</option>
+              <option value="es" data-i18n="common.language.es">Español</option>
+              <option value="zh" data-i18n="common.language.zh">简体中文</option>
+              <option value="fr" data-i18n="common.language.fr">Français</option>
             </select>
           </label>
         </div>
@@ -81,9 +91,11 @@
           </label>
 
           <div class="form-actions">
-            <button class="button button-primary" type="submit">Acessar painel</button>
+            <button class="button button-primary" type="submit">
+              <span data-i18n="button.access_panel">Acessar painel</span>
+            </button>
             <button id="clear-member-session" class="button button-secondary" type="button">
-              Limpar sessão
+              <span data-i18n="button.clear_session">Limpar sessão</span>
             </button>
           </div>
         </form>

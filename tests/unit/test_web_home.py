@@ -14,6 +14,7 @@ def test_home_page_returns_public_frontend() -> None:
     assert "accept_legal_terms" in response.text
     assert "consent-banner" in response.text
     assert "theme-selector" in response.text
+    assert "language-selector" in response.text
     assert "/static/preferences.js" in response.text
 
 
@@ -58,6 +59,22 @@ def test_preferences_javascript_supports_global_theme_selector() -> None:
     assert "prefers-color-scheme: dark" in response.text
     assert "applyTheme" in response.text
     assert "theme-selector" in response.text
+
+
+def test_preferences_javascript_supports_lightweight_language_selector() -> None:
+    with TestClient(app) as client:
+        response = client.get("/static/preferences.js")
+
+    assert response.status_code == 200
+    assert "monitor-comunitario:language" in response.text
+    assert "language-selector" in response.text
+    assert "applyLanguage" in response.text
+    assert "pt:" in response.text
+    assert "en:" in response.text
+    assert "es:" in response.text
+    assert "zh:" in response.text
+    assert "fr:" in response.text
+    assert "data-i18n" in response.text
 
 
 def test_public_config_is_served_without_secret_values() -> None:

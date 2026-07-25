@@ -22,14 +22,24 @@
         </a>
 
         <div class="nav-actions">
-          <a class="nav-link" href="#cadastro">Cadastrar endereço</a>
-          <a class="nav-link" href="/member">Área do morador</a>
+          <a class="nav-link" href="#cadastro" data-i18n="nav.register">Cadastrar endereço</a>
+          <a class="nav-link" href="/member" data-i18n="nav.member">Área do morador</a>
           <label class="preference-control" for="theme-selector">
-            Tema
+            <span data-i18n="common.theme">Tema</span>
             <select id="theme-selector" name="theme">
-              <option value="system">Sistema</option>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
+              <option value="system" data-i18n="common.theme.system">Sistema</option>
+              <option value="light" data-i18n="common.theme.light">Claro</option>
+              <option value="dark" data-i18n="common.theme.dark">Escuro</option>
+            </select>
+          </label>
+          <label class="preference-control" for="language-selector">
+            <span data-i18n="common.language">Idioma</span>
+            <select id="language-selector" name="language">
+              <option value="pt" data-i18n="common.language.pt">Português</option>
+              <option value="en" data-i18n="common.language.en">English</option>
+              <option value="es" data-i18n="common.language.es">Español</option>
+              <option value="zh" data-i18n="common.language.zh">简体中文</option>
+              <option value="fr" data-i18n="common.language.fr">Français</option>
             </select>
           </label>
         </div>
@@ -55,7 +65,7 @@
                 Informe telefone, município e endereço. Depois guarde o código privado exibido
                 uma única vez.
               </p>
-              <a class="button button-primary" href="#cadastro">Cadastrar agora</a>
+              <a class="button button-primary" href="#cadastro" data-i18n="button.register_now">Cadastrar agora</a>
             </article>
 
             <article class="path-panel path-panel-secondary">
@@ -65,7 +75,7 @@
                 Use a área do morador para consultar seus dados e possíveis alertas ligados ao
                 endereço cadastrado.
               </p>
-              <a class="button button-secondary" href="/member">Acessar área do morador</a>
+              <a class="button button-secondary" href="/member" data-i18n="button.member_area">Acessar área do morador</a>
             </article>
           </div>
 
@@ -199,11 +209,11 @@
               <div class="access-code-box">
                 <code id="access-code-value">—</code>
                 <button id="copy-access-code" class="button button-secondary" type="button">
-                  Copiar código
+                  <span data-i18n="button.copy_code">Copiar código</span>
                 </button>
               </div>
 
-              <a class="button button-primary" href="/member">Acessar área do morador</a>
+              <a class="button button-primary" href="/member" data-i18n="button.member_area">Acessar área do morador</a>
             </div>
           </form>
         </div>
@@ -226,7 +236,7 @@
               A consulta de alertas é feita pela área do morador, usando telefone cadastrado e
               código privado.
             </p>
-            <a class="button button-secondary" href="/member">Entrar na área do morador</a>
+            <a class="button button-secondary" href="/member" data-i18n="button.member_area">Entrar na área do morador</a>
           </div>
         </aside>
       </section>
