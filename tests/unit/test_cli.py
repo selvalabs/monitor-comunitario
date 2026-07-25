@@ -46,6 +46,7 @@ def test_cli_hermes_process_command_runs(monkeypatch) -> None:  # type: ignore[n
     class FakeSummary:
         events_checked = 2
         events_processed = 2
+        events_escalated = 0
         events_failed = 0
 
     monkeypatch.setattr(cli, "init_db", lambda: None)
@@ -53,7 +54,7 @@ def test_cli_hermes_process_command_runs(monkeypatch) -> None:  # type: ignore[n
     monkeypatch.setattr(
         cli,
         "process_created_hermes_events",
-        lambda session, limit: FakeSummary(),
+        lambda session, limit, telegram_enabled, telegram_provider: FakeSummary(),
     )
 
     result = CliRunner().invoke(cli.app, ["hermes-process", "--limit", "5"])
@@ -62,3 +63,4 @@ def test_cli_hermes_process_command_runs(monkeypatch) -> None:  # type: ignore[n
     assert "Hermes local processing completed" in result.output
     assert "Events checked: 2" in result.output
     assert "Events processed: 2" in result.output
+    assert "Events escalated: 0" in result.output
