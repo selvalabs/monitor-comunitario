@@ -1,9 +1,19 @@
 from dataclasses import dataclass
+from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from monitor_comunitario.db.models import HermesEvent, HermesEventStatus, utc_now
+from monitor_comunitario.notifications.telegram_provider import TelegramMessage
+from monitor_comunitario.services.hermes_catalog import HERMES_ESCALATION_EVENTS
+
+
+class HermesTelegramProvider(Protocol):
+    """Minimal provider contract needed for Hermes operator escalation."""
+
+    async def send_message(self, message: TelegramMessage) -> None:
+        """Send one operator escalation message."""
 
 
 @dataclass(frozen=True)
@@ -12,6 +22,7 @@ class HermesProcessingSummary:
 
     events_checked: int
     events_processed: int
+    events_escalated: int
     events_failed: int
 
 
@@ -70,18 +81,55 @@ def list_created_hermes_events(session: Session, limit: int = 50) -> list[Hermes
     return list(session.scalars(query).all())
 
 
-def process_created_hermes_events(session: Session, limit: int = 50) -> HermesProcessingSummary:
-    """Process created Hermes events locally without external delivery."""
+def build_telegram_escalation_message(event: HermesEvent) -> TelegramMessage:
+    """Build the operator-facing Telegram message for a Hermes escalation."""
+    fields = [
+        "Monitor Comunitario Hermes",
+        f"Evento: {event.event_type}",
+        f"ID: {event.id}",
+        f"Canal: {event.channel or '-'}",
+        f"Intent: {event.intent or '-'}",
+        f"Template: {event.template_key or '-'}",
+        f"Payload: {event.payload_json}",
+    ]
+    return TelegramMessage(text="\n".join(fields))
+
+
+def process_created_hermes_events(
+    session: Session,
+    limit: int = 50,
+    *,
+    telegram_enabled: bool = False,
+    telegram_provider: HermesTelegramProvider | None = None,
+) -> HermesProcessingSummary:
+    """Process created Hermes events locally, escalating selected events when enabled."""
+    import asyncio
+
     events = list_created_hermes_events(session, limit=limit)
 
     processed = 0
+    escalated = 0
     failed = 0
 
     for event in events:
         try:
             queued = mark_hermes_event_queued(session, event)
-            mark_hermes_event_processed(session, queued)
-            processed += 1
+            should_escalate = (
+                telegram_enabled
+                and telegram_provider is not None
+                and queued.event_type in HERMES_ESCALATION_EVENTS
+            )
+            if should_escalate:
+                message = build_telegram_escalation_message(queued)
+                provider = telegram_provider
+                if provider is None:
+                    raise RuntimeError("Telegram provider is required for escalation.")
+                asyncio.run(provider.send_message(message))
+                mark_hermes_event_escalated(session, queued)
+                escalated += 1
+            else:
+                mark_hermes_event_processed(session, queued)
+                processed += 1
         except Exception as exc:
             mark_hermes_event_failed(session, event, str(exc))
             failed += 1
@@ -89,5 +137,6 @@ def process_created_hermes_events(session: Session, limit: int = 50) -> HermesPr
     return HermesProcessingSummary(
         events_checked=len(events),
         events_processed=processed,
+        events_escalated=escalated,
         events_failed=failed,
     )

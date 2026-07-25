@@ -8,6 +8,7 @@ from rich.console import Console
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import SessionLocal
+from monitor_comunitario.notifications.telegram_provider import TelegramNotificationProvider
 from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_municipality_pages,
     fetch_celesc_page,
@@ -254,14 +255,30 @@ def hermes_process(
     ),
 ) -> None:
     """Process created Hermes events locally without external delivery."""
+    settings = get_settings()
     init_db()
+    telegram_provider = (
+        TelegramNotificationProvider(
+            bot_token=settings.hermes_telegram_bot_token,
+            chat_id=settings.hermes_telegram_chat_id,
+            api_base_url=settings.hermes_telegram_api_base_url,
+        )
+        if settings.hermes_telegram_enabled
+        else None
+    )
 
     with SessionLocal() as session:
-        summary = process_created_hermes_events(session, limit=limit)
+        summary = process_created_hermes_events(
+            session,
+            limit=limit,
+            telegram_enabled=settings.hermes_telegram_enabled,
+            telegram_provider=telegram_provider,
+        )
 
     console.print("[bold green]Hermes local processing completed[/bold green]")
     console.print(f"Events checked: {summary.events_checked}")
     console.print(f"Events processed: {summary.events_processed}")
+    console.print(f"Events escalated: {summary.events_escalated}")
     console.print(f"Events failed: {summary.events_failed}")
 
 
