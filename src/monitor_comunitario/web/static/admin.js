@@ -30,6 +30,7 @@ const elements = {
   runErrorMessage: document.querySelector("#run-error-message"),
   runsTableBody: document.querySelector("#runs-table-body"),
   usersTableBody: document.querySelector("#users-table-body"),
+  hermesEventsTableBody: document.querySelector("#hermes-events-table-body"),
 };
 
 function setStatus(message, variant = "info") {
@@ -208,6 +209,30 @@ function renderUsersTable(users) {
     .join("");
 }
 
+function renderHermesEventsTable(events) {
+  if (!events.length) {
+    elements.hermesEventsTableBody.innerHTML =
+      '<tr><td colspan="7">Nenhum evento Hermes encontrado.</td></tr>';
+    return;
+  }
+
+  elements.hermesEventsTableBody.innerHTML = events
+    .map(
+      (event) => `
+        <tr>
+          <td>${event.id}</td>
+          <td>${formatValue(event.event_type)}</td>
+          <td>${formatValue(event.status)}</td>
+          <td>${formatValue(event.channel)}</td>
+          <td>${formatValue(event.intent)}</td>
+          <td>${formatValue(event.template_key)}</td>
+          <td>${formatDate(event.created_at)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
 async function refreshDashboard() {
   setStatus("Atualizando dados operacionais...");
 
@@ -220,9 +245,10 @@ async function refreshDashboard() {
     return;
   }
 
-  const [diagnostics, runs] = await Promise.all([
+  const [diagnostics, runs, hermesEvents] = await Promise.all([
     fetchJson("/admin/diagnostics", { headers: adminHeaders() }),
     fetchJson("/admin/runs?limit=10", { headers: adminHeaders() }),
+    fetchJson("/admin/hermes/events?limit=10", { headers: adminHeaders() }),
   ]);
   const users = await fetchJson("/admin/users?include_inactive=true", {
     headers: adminHeaders(),
@@ -231,6 +257,7 @@ async function refreshDashboard() {
   renderDiagnostics(diagnostics);
   renderRunsTable(runs);
   renderUsersTable(users);
+  renderHermesEventsTable(hermesEvents);
   setStatus("Dashboard atualizado com sucesso.", "success");
 }
 
