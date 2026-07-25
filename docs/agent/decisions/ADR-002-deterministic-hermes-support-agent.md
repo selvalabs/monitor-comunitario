@@ -1,7 +1,7 @@
 # ADR-002 - Deterministic Hermes support agent
 
 Date: 2026-07-24  
-Status: Proposed  
+Status: Accepted  
 Owner: SelvaLabs / Monitor Comunitario operator  
 Issue: #37
 
@@ -199,17 +199,19 @@ Review this ADR before any of these changes:
 
 ## Follow-up work
 
-- Add admin read endpoints for `hermes_events`.
-- Connect notification creation to `notification_ready` Hermes events.
-- Add a local Hermes poller command.
+- Done: add admin read endpoints for `hermes_events`.
+- Done: connect notification creation to `notification_ready` Hermes events.
+- Done: add local Hermes processor command.
+- Done: emit `admin_approval_pending` and `worker_failed` events.
+- Done: add Telegram escalation adapter behind configuration.
+- Done: expose protected admin status updates and dashboard actions.
 - Add delivery status transitions and retry policy.
-- Add Telegram escalation adapter behind configuration.
 - Add WhatsApp gateway integration only after deterministic templates and delivery audit are validated.
 - Keep PR #34 independent from this architecture track.
 
 ## Links
 
 - Issue: https://github.com/selvalabs/monitor-comunitario/issues/37
-- Branch: https://github.com/selvalabs/monitor-comunitario/tree/hermes-events-bootstrap
-- Compare: https://github.com/selvalabs/monitor-comunitario/compare/main...hermes-events-bootstrap
+- Main branch: https://github.com/selvalabs/monitor-comunitario/tree/main
+- Initial bootstrap PR: https://github.com/selvalabs/monitor-comunitario/pull/38
 - Related docs: `docs/agent/hermes-bootstrap.md`, `docs/ARCHITECTURE.md`, `docs/PRD.md`
