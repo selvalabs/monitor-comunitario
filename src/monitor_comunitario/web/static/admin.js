@@ -212,13 +212,23 @@ function renderUsersTable(users) {
 function renderHermesEventsTable(events) {
   if (!events.length) {
     elements.hermesEventsTableBody.innerHTML =
-      '<tr><td colspan="7">Nenhum evento Hermes encontrado.</td></tr>';
+      '<tr><td colspan="8">Nenhum evento Hermes encontrado.</td></tr>';
     return;
   }
 
   elements.hermesEventsTableBody.innerHTML = events
-    .map(
-      (event) => `
+    .map((event) => {
+      const actionable = ["created", "queued"].includes(event.status);
+      const action = actionable
+        ? `
+          <div class="table-actions">
+            <button class="button button-secondary mark-hermes-event" type="button" data-event-id="${event.id}" data-status="processed">Processado</button>
+            <button class="button button-secondary button-danger-soft mark-hermes-event" type="button" data-event-id="${event.id}" data-status="escalated">Escalar</button>
+          </div>
+        `
+        : '<span class="muted-text">finalizado</span>';
+
+      return `
         <tr>
           <td>${event.id}</td>
           <td>${formatValue(event.event_type)}</td>
@@ -227,9 +237,10 @@ function renderHermesEventsTable(events) {
           <td>${formatValue(event.intent)}</td>
           <td>${formatValue(event.template_key)}</td>
           <td>${formatDate(event.created_at)}</td>
+          <td>${action}</td>
         </tr>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 
@@ -277,6 +288,25 @@ async function approveUser(userId) {
   });
 
   setStatus(`Cadastro #${userId} aprovado para notificações.`, "success");
+  await refreshDashboard();
+}
+
+async function updateHermesEventStatus(eventId, status) {
+  if (!getAdminKey()) {
+    setStatus("Informe a chave administrativa antes de alterar eventos Hermes.", "warning");
+    return;
+  }
+
+  await fetchJson(`/admin/hermes/events/${eventId}/status`, {
+    method: "PATCH",
+    headers: {
+      ...adminHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  setStatus(`Evento Hermes #${eventId} atualizado para ${status}.`, "success");
   await refreshDashboard();
 }
 
@@ -356,6 +386,20 @@ function bindEvents() {
 
     try {
       await approveUser(button.dataset.userId);
+    } catch (error) {
+      setStatus(error.message, "error");
+    }
+  });
+
+  elements.hermesEventsTableBody.addEventListener("click", async (event) => {
+    const button = event.target.closest(".mark-hermes-event");
+
+    if (!button) {
+      return;
+    }
+
+    try {
+      await updateHermesEventStatus(button.dataset.eventId, button.dataset.status);
     } catch (error) {
       setStatus(error.message, "error");
     }

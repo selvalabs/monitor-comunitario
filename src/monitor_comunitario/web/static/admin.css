@@ -652,3 +652,14 @@ dd {
   color: var(--muted);
   font-weight: 800;
 }
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.table-actions .button {
+  min-height: 34px;
+  padding: 0.45rem 0.55rem;
+}
