@@ -23,13 +23,23 @@
         </a>
 
         <div class="nav-actions">
-          <a class="nav-link" href="/" target="_blank" rel="noreferrer">Site público</a>
+          <a class="nav-link" href="/" target="_blank" rel="noreferrer" data-i18n="nav.public_site">Site público</a>
           <label class="preference-control" for="theme-selector">
-            Tema
+            <span data-i18n="common.theme">Tema</span>
             <select id="theme-selector" name="theme">
-              <option value="system">Sistema</option>
-              <option value="light">Claro</option>
-              <option value="dark">Escuro</option>
+              <option value="system" data-i18n="common.theme.system">Sistema</option>
+              <option value="light" data-i18n="common.theme.light">Claro</option>
+              <option value="dark" data-i18n="common.theme.dark">Escuro</option>
+            </select>
+          </label>
+          <label class="preference-control" for="language-selector">
+            <span data-i18n="common.language">Idioma</span>
+            <select id="language-selector" name="language">
+              <option value="pt" data-i18n="common.language.pt">Português</option>
+              <option value="en" data-i18n="common.language.en">English</option>
+              <option value="es" data-i18n="common.language.es">Español</option>
+              <option value="zh" data-i18n="common.language.zh">简体中文</option>
+              <option value="fr" data-i18n="common.language.fr">Français</option>
             </select>
           </label>
         </div>
@@ -47,10 +57,10 @@
         </div>
         <div class="hero-actions">
           <button id="refresh-dashboard" class="button button-primary" type="button">
-            Atualizar painel
+            <span data-i18n="button.refresh_dashboard">Atualizar painel</span>
           </button>
           <button id="run-monitoring" class="button button-secondary button-danger-soft" type="button">
-            Rodar coleta manual
+            <span data-i18n="button.run_monitoring">Rodar coleta manual</span>
           </button>
         </div>
       </section>
@@ -78,9 +88,11 @@
           </label>
 
           <div class="form-actions">
-            <button class="button button-primary" type="submit">Salvar nesta sessão</button>
+            <button class="button button-primary" type="submit">
+              <span data-i18n="button.save_session">Salvar nesta sessão</span>
+            </button>
             <button id="clear-admin-key" class="button button-secondary" type="button">
-              Limpar chave
+              <span data-i18n="button.clear_key">Limpar chave</span>
             </button>
           </div>
         </form>
