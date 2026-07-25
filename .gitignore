@@ -54,3 +54,6 @@ node_modules/
 
 # Local diagnostic scripts
 tools/diagnose_*.py
+
+# Local brainstorming companion
+.superpowers/

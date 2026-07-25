@@ -86,6 +86,7 @@ function showAccessCodePanel(accessCode) {
   latestAccessCode = accessCode || "";
   accessCodeValue.textContent = latestAccessCode || "Código indisponível";
   accessCodePanel.hidden = false;
+  accessCodePanel.focus();
 }
 
 async function copyAccessCode() {

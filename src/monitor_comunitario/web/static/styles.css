@@ -154,11 +154,50 @@ h2 {
   font-size: 1rem;
 }
 
-.hero-actions {
+.hero-actions,
+.path-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.path-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 1rem;
+}
+
+.path-panel h2 {
+  font-size: 1.35rem;
+}
+
+.path-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.path-label {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.path-panel-primary {
+  border-color: rgba(35, 95, 85, 0.28);
+  background: var(--accent-soft);
 }
 
 .button {
@@ -605,6 +644,7 @@ input:focus {
 @media (max-width: 860px) {
   .layout,
   .cards,
+  .path-grid,
   .steps {
     grid-template-columns: 1fr;
   }

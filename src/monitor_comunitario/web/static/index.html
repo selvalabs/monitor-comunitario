@@ -34,14 +34,31 @@
           <p class="eyebrow">Alertas comunitários</p>
           <h1>Saiba quando há desligamento programado perto do seu endereço.</h1>
           <p class="hero-copy">
-            Cadastre seu município e endereço para acompanhar avisos públicos de desligamentos
-            programados da Celesc. O monitor cruza os avisos coletados com sua região e exibe
-            possíveis alertas na área do morador.
+            Escolha um caminho: cadastre um novo endereço para receber alertas na área do
+            morador, ou entre com seu telefone e código privado para consultar avisos já
+            encontrados.
           </p>
 
-          <div class="hero-actions">
-            <a class="button button-primary" href="#cadastro">Cadastrar agora</a>
-            <a class="button button-secondary" href="/member">Acessar área do morador</a>
+          <div class="path-grid" aria-label="Caminhos principais">
+            <article class="path-panel path-panel-primary">
+              <span class="path-label">Novo cadastro</span>
+              <h2>Cadastrar um endereço</h2>
+              <p>
+                Informe telefone, município e endereço. Depois guarde o código privado exibido
+                uma única vez.
+              </p>
+              <a class="button button-primary" href="#cadastro">Cadastrar agora</a>
+            </article>
+
+            <article class="path-panel path-panel-secondary">
+              <span class="path-label">Já tenho cadastro</span>
+              <h2>Entrar com telefone e código privado</h2>
+              <p>
+                Use a área do morador para consultar seus dados e possíveis alertas ligados ao
+                endereço cadastrado.
+              </p>
+              <a class="button button-secondary" href="/member">Acessar área do morador</a>
+            </article>
           </div>
 
           <p class="disclaimer">
@@ -163,11 +180,12 @@
 
             <p id="form-status" class="status-message" role="status"></p>
 
-            <div id="access-code-panel" class="access-code-panel" hidden>
+            <div id="access-code-panel" class="access-code-panel" tabindex="-1" hidden>
               <p class="eyebrow">Código privado</p>
               <h3>Guarde este código para acessar seus alertas</h3>
               <p>
-                Ele aparece apenas uma vez. Use junto com o telefone cadastrado para entrar na área do morador.
+                Ele aparece apenas uma vez. Use este código junto com seu telefone para entrar na
+                área do morador.
               </p>
 
               <div class="access-code-box">
@@ -197,7 +215,8 @@
           <div class="mini-panel">
             <h2>Já tenho cadastro</h2>
             <p>
-              A consulta de alertas agora é feita pela área do morador, usando telefone cadastrado e código privado.
+              A consulta de alertas é feita pela área do morador, usando telefone cadastrado e
+              código privado.
             </p>
             <a class="button button-secondary" href="/member">Entrar na área do morador</a>
           </div>
