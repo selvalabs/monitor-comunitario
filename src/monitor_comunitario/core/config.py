@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     evolution_instance: str = ""
     evolution_enabled: bool = False
 
+    hermes_telegram_enabled: bool = False
+    hermes_telegram_bot_token: str = ""
+    hermes_telegram_chat_id: str = ""
+    hermes_telegram_api_base_url: str = "https://api.telegram.org"
+
     ads_enabled: bool = False
     ads_provider: str = "placeholder"
     adsense_client_id: str = ""
