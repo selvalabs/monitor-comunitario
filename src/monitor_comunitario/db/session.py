@@ -9,10 +9,12 @@ from monitor_comunitario.core.config import get_settings
 settings = get_settings()
 
 
-def _sqlite_connect_args(database_url: str) -> dict[str, bool]:
-    """Return SQLite-specific engine options when the app uses SQLite."""
+def _connect_args(database_url: str) -> dict[str, object]:
+    """Return engine options appropriate for the configured database."""
     if database_url.startswith("sqlite"):
         return {"check_same_thread": False}
+    if database_url.startswith(("postgresql", "postgres")):
+        return {"prepare_threshold": None}
     return {}
 
 
@@ -33,7 +35,7 @@ _ensure_sqlite_parent_dir(settings.database_url)
 
 engine: Engine = create_engine(
     settings.database_url,
-    connect_args=_sqlite_connect_args(settings.database_url),
+    connect_args=_connect_args(settings.database_url),
     pool_pre_ping=True,
 )
 
