@@ -9,7 +9,7 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 - Projeto: Monitor Comunitario - Celesc Outage Watcher.
 - Estado: MVP tecnico com documentacao, CI, Docker, scraper, parser, matcher, area do morador, admin protegido e worker diario.
 - Protocolo: SelvaLabs Agent OS, read-only first, issue/branch/PR/CI/handoff, Notion/Cerebro ao fim de cada etapa.
-- Produção: deploy endurecido verificado em 2026-08-05 no commit 7652996 da main.
+- Produção: deploy endurecido verificado em 2026-08-05 no commit 626267a da main.
 - Produção: API, worker e Redis privado saudáveis; portas diretas da API e do Redis não estão públicas.
 - Produção: banco Supabase em 20260724_0004; migration obsoleta residual foi removida somente do diretório remoto após backup específico do projeto.
 
@@ -124,6 +124,14 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - `pydantic-settings` foi atualizado para `2.14.2` apos auditoria encontrar vulnerabilidade na versao anterior.
 - Branches remotas antigas ja mergeadas foram removidas; branches divergentes e Dependabot foram preservadas.
 - PR #95 registra a remocao do script destrutivo e a limpeza de metadados pessoais/caminhos locais.
+## Atualizacao de producao 2026-08-05
+
+- PR #96 foi mergeado e publicado no Monitor Comunitario.
+- Commit em execucao: `626267a`.
+- Backup dedicado: `/opt/hermes/venusiana/data/backups/monitor-comunitario-20260805-155604`.
+- Validacao TLS de banco esta ativa e `pydantic-settings` em execucao e `2.14.2`.
+- API/worker/Redis saudaveis, banco em `20260724_0004`, sessao admin e HTTPS verificados.
+- Nenhum outro servico da VPS foi reiniciado ou alterado.
 ## Template para futuras atualizacoes
 
 ```text
