@@ -1,4 +1,4 @@
-﻿from typing import Annotated
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -17,6 +17,7 @@ from monitor_comunitario.services.rate_limit import (
     enforce_rate_limit,
     rate_limit_key,
 )
+from monitor_comunitario.services.request_context import get_client_ip
 
 router = APIRouter(prefix="/member", tags=["member"])
 
@@ -48,10 +49,7 @@ def access_member_area(
     """Return member data and notifications after phone + access code validation."""
     phone = payload.phone.strip()
     settings = get_settings()
-    client_ip = request.headers.get(
-        "x-forwarded-for",
-        request.client.host if request.client else "unknown",
-    )
+    client_ip = get_client_ip(request, trusted_proxy_ips=settings.trusted_proxy_ips)
     try:
         enforce_rate_limit(
             rate_limit_key("member-access", client_ip, phone),
