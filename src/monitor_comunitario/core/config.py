@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/monitor_comunitario.db"
     admin_api_key: str = ""
     redis_url: str = ""
+    trusted_proxy_ips: str = ""
     rate_limit_register_limit: int = 5
     rate_limit_register_window_seconds: int = 600
     rate_limit_member_limit: int = 10

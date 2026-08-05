@@ -1,4 +1,4 @@
-﻿from datetime import UTC, datetime
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -18,6 +18,7 @@ from monitor_comunitario.services.rate_limit import (
     enforce_rate_limit,
     rate_limit_key,
 )
+from monitor_comunitario.services.request_context import get_client_ip
 
 router = APIRouter(prefix="/users", tags=["users"])
 admin_router = APIRouter(
@@ -42,10 +43,7 @@ def create_user(
 ) -> UserCreatedRead:
     """Create a monitored user/address record and return a one-time access code."""
     settings = get_settings()
-    client_ip = request.headers.get(
-        "x-forwarded-for",
-        request.client.host if request.client else "unknown",
-    )
+    client_ip = get_client_ip(request, trusted_proxy_ips=settings.trusted_proxy_ips)
     try:
         enforce_rate_limit(
             rate_limit_key("user-registration", client_ip),
