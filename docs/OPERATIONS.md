@@ -208,3 +208,8 @@ For guarded VPS deployments, also inspect API and worker logs through the Docker
 ```
 
 If the API port is not reachable from the agent container, validate from the host network or through the configured reverse proxy after it is added.
+## Diagnostico de runs interrompidas
+
+Uma run com status `running` e `finished_at` vazio indica que uma execucao anterior foi interrompida antes de persistir o estado final. Investigue os logs do worker, o `error_message` e o snapshot associado antes de executar novamente. Nao remova a run nem seus snapshots como primeira medida.
+
+A falha esperada deve resultar em uma run `failed` finalizada e em um evento Hermes `worker_failed`. O evento e operacional e nao deve conter credenciais, telefone ou endereco.

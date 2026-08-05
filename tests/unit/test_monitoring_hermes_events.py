@@ -22,7 +22,10 @@ def test_failed_monitoring_cycle_creates_hermes_worker_failed_event(monkeypatch)
         hermes_event = session.scalar(select(HermesEvent))
 
     assert result.run.status == MonitoringRunStatus.FAILED.value
+    assert result.run.finished_at is not None
+    assert result.run.error_message == "RuntimeError: scraper unavailable"
     assert hermes_event is not None
+    assert session.scalar(select(HermesEvent).limit(2).offset(1)) is None
     assert hermes_event.event_type == "worker_failed"
     assert hermes_event.status == "created"
     assert hermes_event.intent == "UNKNOWN_ESCALATE"
