@@ -50,6 +50,23 @@ class Settings(BaseSettings):
     consent_required: bool = True
     consent_version: str = "2026-06-16-v1"
 
+def validate_runtime_settings(settings: Settings) -> None:
+    """Reject configuration values that would make a production deploy unsafe."""
+    if settings.app_env.lower() != "production":
+        return
+
+    database_url = settings.database_url.lower()
+    admin_api_key = settings.admin_api_key
+
+    if database_url.startswith("sqlite"):
+        raise ValueError("production requires a PostgreSQL database")
+    if len(admin_api_key) < 32:
+        raise ValueError("production requires an admin API key with at least 32 characters")
+    if admin_api_key.lower() in {"change-me-local-admin-key", "change-me"}:
+        raise ValueError("production rejects placeholder admin API keys")
+    if "monitor:monitor@" in database_url:
+        raise ValueError("production rejects example database credentials")
+
 
 @lru_cache
 def get_settings() -> Settings:
