@@ -41,6 +41,10 @@ services:
       - "traefik.http.routers.monitor-comunitario.entrypoints=websecure"
       - "traefik.http.routers.monitor-comunitario.tls=true"
       - "traefik.http.routers.monitor-comunitario.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.monitor-comunitario.middlewares=monitor-comunitario-rate-limit@docker"
+      - "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.average=30"
+      - "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.burst=60"
+      - "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.period=1m"
       - "traefik.http.services.monitor-comunitario.loadbalancer.server.port=8000"
     volumes:
       - ./snapshots:/app/snapshots
