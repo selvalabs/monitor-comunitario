@@ -33,3 +33,11 @@ jobs:
 
       - name: Test
         run: uv run pytest
+
+      - name: Bandit
+        run: uv run bandit -q -r src
+
+      - name: Dependency audit
+        run: |
+          uv export --format requirements-txt --no-dev --no-emit-project > requirements-audit.txt
+          uvx --isolated pip-audit --strict -r requirements-audit.txt

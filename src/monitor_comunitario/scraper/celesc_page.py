@@ -8,6 +8,9 @@ from pathlib import Path
 from typing import Any, cast
 
 from playwright.async_api import (
+    Error as PlaywrightError,
+)
+from playwright.async_api import (
     Frame,
     Locator,
     Page,
@@ -161,7 +164,7 @@ async def find_municipality_select_in_frames(page: Page) -> tuple[Frame, Locator
         try:
             selects = frame.locator("select")
             select_count = await selects.count()
-        except Exception:
+        except PlaywrightError:
             continue
 
         for index in range(select_count):
