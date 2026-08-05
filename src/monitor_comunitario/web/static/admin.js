@@ -1,62 +1,3 @@
-const ADMIN_KEY_STORAGE_KEY = "monitor-comunitario-admin-api-key";
-
-const elements = {
-  form: document.querySelector("#admin-key-form"),
-  keyInput: document.querySelector("#admin-api-key"),
-  clearKeyButton: document.querySelector("#clear-admin-key"),
-  refreshButton: document.querySelector("#refresh-dashboard"),
-  runButton: document.querySelector("#run-monitoring"),
-  status: document.querySelector("#dashboard-status"),
-  apiStatus: document.querySelector("#api-status"),
-  apiMeta: document.querySelector("#api-meta"),
-  databaseStatus: document.querySelector("#database-status"),
-  databaseMeta: document.querySelector("#database-meta"),
-  schedulerStatus: document.querySelector("#scheduler-status"),
-  schedulerMeta: document.querySelector("#scheduler-meta"),
-  latestRunStatus: document.querySelector("#latest-run-status"),
-  latestRunMeta: document.querySelector("#latest-run-meta"),
-  metricNoticesFound: document.querySelector("#metric-notices-found"),
-  metricNoticesCreated: document.querySelector("#metric-notices-created"),
-  metricUsersChecked: document.querySelector("#metric-users-checked"),
-  metricMatchesCreated: document.querySelector("#metric-matches-created"),
-  metricNotificationsCreated: document.querySelector("#metric-notifications-created"),
-  detailEnvironment: document.querySelector("#detail-environment"),
-  detailTimezone: document.querySelector("#detail-timezone"),
-  detailNotificationProvider: document.querySelector("#detail-notification-provider"),
-  detailEvolutionEnabled: document.querySelector("#detail-evolution-enabled"),
-  runId: document.querySelector("#run-id"),
-  runStartedAt: document.querySelector("#run-started-at"),
-  runFinishedAt: document.querySelector("#run-finished-at"),
-  runErrorMessage: document.querySelector("#run-error-message"),
-  runsTableBody: document.querySelector("#runs-table-body"),
-  usersTableBody: document.querySelector("#users-table-body"),
-  hermesEventsTableBody: document.querySelector("#hermes-events-table-body"),
-};
-
-function setStatus(message, variant = "info") {
-  elements.status.textContent = message;
-  elements.status.dataset.variant = variant;
-}
-
-function getAdminKey() {
-  return sessionStorage.getItem(ADMIN_KEY_STORAGE_KEY) || "";
-}
-
-function setAdminKey(value) {
-  sessionStorage.setItem(ADMIN_KEY_STORAGE_KEY, value.trim());
-}
-
-function clearAdminKey() {
-  sessionStorage.removeItem(ADMIN_KEY_STORAGE_KEY);
-  elements.keyInput.value = "";
-}
-
-function adminHeaders() {
-  return {
-    "X-Admin-API-Key": getAdminKey(),
-  };
-}
-
 async function fetchJson(path, options = {}) {
   const response = await fetch(path, options);
   let payload = null;
@@ -290,19 +231,12 @@ async function refreshDashboard() {
   renderHealth(health);
   renderReadiness(readiness);
 
-  if (!getAdminKey()) {
-    setStatus("Informe a chave administrativa para carregar diagnostics protegidos.", "warning");
-    return;
-  }
-
   const [diagnostics, runs, hermesEvents] = await Promise.all([
-    fetchJson("/admin/diagnostics", { headers: adminHeaders() }),
-    fetchJson("/admin/runs?limit=10", { headers: adminHeaders() }),
-    fetchJson("/admin/hermes/events?limit=10", { headers: adminHeaders() }),
+    fetchJson("/admin/diagnostics", {}),
+    fetchJson("/admin/runs?limit=10", {}),
+    fetchJson("/admin/hermes/events?limit=10", {}),
   ]);
-  const users = await fetchJson("/admin/users?include_inactive=true", {
-    headers: adminHeaders(),
-  });
+  const users = await fetchJson("/admin/users?include_inactive=true");
 
   renderDiagnostics(diagnostics);
   renderRunsTable(runs);
@@ -312,15 +246,10 @@ async function refreshDashboard() {
 }
 
 async function approveUser(userId) {
-  if (!getAdminKey()) {
-    setStatus("Informe a chave administrativa antes de aprovar cadastros.", "warning");
-    return;
-  }
 
   await fetchJson(`/admin/users/${userId}`, {
     method: "PATCH",
     headers: {
-      ...adminHeaders(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ notifications_approved: true }),
@@ -331,15 +260,10 @@ async function approveUser(userId) {
 }
 
 async function updateHermesEventStatus(eventId, status) {
-  if (!getAdminKey()) {
-    setStatus("Informe a chave administrativa antes de alterar eventos Hermes.", "warning");
-    return;
-  }
 
   await fetchJson(`/admin/hermes/events/${eventId}/status`, {
     method: "PATCH",
     headers: {
-      ...adminHeaders(),
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ status }),
@@ -350,10 +274,6 @@ async function updateHermesEventStatus(eventId, status) {
 }
 
 async function triggerManualRun() {
-  if (!getAdminKey()) {
-    setStatus("Informe a chave administrativa antes de rodar o monitoramento.", "warning");
-    return;
-  }
 
   const confirmed = window.confirm(
     "Rodar o monitoramento manual agora? Essa ação pode demorar durante a coleta.",
@@ -369,7 +289,6 @@ async function triggerManualRun() {
   try {
     await fetchJson("/admin/runs/manual", {
       method: "POST",
-      headers: adminHeaders(),
     });
     setStatus("Monitoramento manual concluído. Atualizando painel...", "success");
     await refreshDashboard();
@@ -378,26 +297,37 @@ async function triggerManualRun() {
   }
 }
 
-function hydrateStoredKey() {
-  const storedKey = getAdminKey();
-
-  if (storedKey) {
-    elements.keyInput.value = storedKey;
-    setStatus("Chave administrativa carregada da sessão. Atualize o painel.");
-  }
+async function authenticateAdmin(value) {
+  await fetchJson("/admin/session", {
+    method: "POST",
+    headers: {
+      "X-Admin-API-Key": value.trim(),
+    },
+  });
+  elements.keyInput.value = "";
+  setStatus("Sessao administrativa iniciada. Atualizando painel...", "success");
+  await refreshDashboard();
 }
 
 function bindEvents() {
   elements.form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setAdminKey(elements.keyInput.value);
-    setStatus("Chave salva nesta sessão. Atualizando painel...", "success");
-    await refreshDashboard();
+
+    try {
+      await authenticateAdmin(elements.keyInput.value);
+    } catch (error) {
+      setStatus(error.message, "error");
+    }
   });
 
-  elements.clearKeyButton.addEventListener("click", () => {
-    clearAdminKey();
-    setStatus("Chave removida desta sessão.", "warning");
+  elements.clearKeyButton.addEventListener("click", async () => {
+    try {
+      await fetchJson("/admin/session", { method: "DELETE" });
+      elements.keyInput.value = "";
+      setStatus("Sessao administrativa encerrada.", "warning");
+    } catch (error) {
+      setStatus(error.message, "error");
+    }
   });
 
   elements.refreshButton.addEventListener("click", async () => {
@@ -445,7 +375,7 @@ function bindEvents() {
   });
 }
 
-hydrateStoredKey();
+
 bindEvents();
 
 refreshDashboard().catch((error) => {
