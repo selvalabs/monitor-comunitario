@@ -158,90 +158,129 @@ function renderLatestRun(run) {
   elements.runErrorMessage.textContent = run.error_message || "—";
 }
 
+function clearTable(body) {
+  body.replaceChildren();
+}
+
+function appendTableMessage(body, colspan, message) {
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+  cell.colSpan = colspan;
+  cell.textContent = message;
+  row.append(cell);
+  body.append(row);
+}
+
+function appendTextCell(row, value) {
+  const cell = document.createElement("td");
+  cell.textContent = formatValue(value);
+  row.append(cell);
+}
+
 function renderRunsTable(runs) {
+  clearTable(elements.runsTableBody);
+
   if (!runs.length) {
-    elements.runsTableBody.innerHTML = '<tr><td colspan="6">Nenhuma execução registrada.</td></tr>';
+    appendTableMessage(elements.runsTableBody, 6, "Nenhuma execução registrada.");
     return;
   }
 
-  elements.runsTableBody.innerHTML = runs
-    .map(
-      (run) => `
-        <tr>
-          <td>${run.id}</td>
-          <td>${formatValue(run.status)}</td>
-          <td>${formatDate(run.started_at)}</td>
-          <td>${formatValue(run.notices_found)}</td>
-          <td>${formatValue(run.matches_created)}</td>
-          <td>${formatValue(run.notifications_created)}</td>
-        </tr>
-      `,
-    )
-    .join("");
+  for (const run of runs) {
+    const row = document.createElement("tr");
+    appendTextCell(row, run.id);
+    appendTextCell(row, run.status);
+    appendTextCell(row, formatDate(run.started_at));
+    appendTextCell(row, run.notices_found);
+    appendTextCell(row, run.matches_created);
+    appendTextCell(row, run.notifications_created);
+    elements.runsTableBody.append(row);
+  }
 }
 
 function renderUsersTable(users) {
+  clearTable(elements.usersTableBody);
+
   if (!users.length) {
-    elements.usersTableBody.innerHTML = '<tr><td colspan="6">Nenhum cadastro encontrado.</td></tr>';
+    appendTableMessage(elements.usersTableBody, 6, "Nenhum cadastro encontrado.");
     return;
   }
 
-  elements.usersTableBody.innerHTML = users
-    .map((user) => {
-      const approved = Boolean(user.notifications_approved);
-      const active = Boolean(user.is_active);
-      const status = `${active ? "ativo" : "inativo"} · ${approved ? "aprovado" : "pendente"}`;
-      const action = approved
-        ? '<span class="muted-text">liberado</span>'
-        : `<button class="button button-primary approve-user" type="button" data-user-id="${user.id}">Aprovar</button>`;
+  for (const user of users) {
+    const row = document.createElement("tr");
+    const approved = Boolean(user.notifications_approved);
+    const active = Boolean(user.is_active);
+    const status = `${active ? "ativo" : "inativo"} · ${approved ? "aprovado" : "pendente"}`;
 
-      return `
-        <tr>
-          <td>${user.id}</td>
-          <td>${formatValue(user.name)}</td>
-          <td>${formatValue(user.phone)}</td>
-          <td>${formatValue(user.municipality)}</td>
-          <td>${status}</td>
-          <td>${action}</td>
-        </tr>
-      `;
-    })
-    .join("");
+    appendTextCell(row, user.id);
+    appendTextCell(row, user.name);
+    appendTextCell(row, user.phone);
+    appendTextCell(row, user.municipality);
+    appendTextCell(row, status);
+
+    const actionCell = document.createElement("td");
+    if (approved) {
+      const label = document.createElement("span");
+      label.className = "muted-text";
+      label.textContent = "liberado";
+      actionCell.append(label);
+    } else {
+      const button = document.createElement("button");
+      button.className = "button button-primary approve-user";
+      button.type = "button";
+      button.dataset.userId = String(user.id);
+      button.textContent = "Aprovar";
+      actionCell.append(button);
+    }
+    row.append(actionCell);
+    elements.usersTableBody.append(row);
+  }
 }
 
 function renderHermesEventsTable(events) {
+  clearTable(elements.hermesEventsTableBody);
+
   if (!events.length) {
-    elements.hermesEventsTableBody.innerHTML =
-      '<tr><td colspan="8">Nenhum evento Hermes encontrado.</td></tr>';
+    appendTableMessage(elements.hermesEventsTableBody, 8, "Nenhum evento Hermes encontrado.");
     return;
   }
 
-  elements.hermesEventsTableBody.innerHTML = events
-    .map((event) => {
-      const actionable = ["created", "queued"].includes(event.status);
-      const action = actionable
-        ? `
-          <div class="table-actions">
-            <button class="button button-secondary mark-hermes-event" type="button" data-event-id="${event.id}" data-status="processed">Processado</button>
-            <button class="button button-secondary button-danger-soft mark-hermes-event" type="button" data-event-id="${event.id}" data-status="escalated">Escalar</button>
-          </div>
-        `
-        : '<span class="muted-text">finalizado</span>';
+  for (const event of events) {
+    const row = document.createElement("tr");
+    appendTextCell(row, event.id);
+    appendTextCell(row, event.event_type);
+    appendTextCell(row, event.status);
+    appendTextCell(row, event.channel);
+    appendTextCell(row, event.intent);
+    appendTextCell(row, event.template_key);
+    appendTextCell(row, formatDate(event.created_at));
 
-      return `
-        <tr>
-          <td>${event.id}</td>
-          <td>${formatValue(event.event_type)}</td>
-          <td>${formatValue(event.status)}</td>
-          <td>${formatValue(event.channel)}</td>
-          <td>${formatValue(event.intent)}</td>
-          <td>${formatValue(event.template_key)}</td>
-          <td>${formatDate(event.created_at)}</td>
-          <td>${action}</td>
-        </tr>
-      `;
-    })
-    .join("");
+    const actionCell = document.createElement("td");
+    const actionable = ["created", "queued"].includes(event.status);
+    if (actionable) {
+      const actions = document.createElement("div");
+      actions.className = "table-actions";
+      for (const [status, label, extraClass] of [
+        ["processed", "Processado", "button-secondary"],
+        ["escalated", "Escalar", "button-secondary button-danger-soft"],
+      ]) {
+        const button = document.createElement("button");
+        button.className = "button " + extraClass + " mark-hermes-event";
+        button.type = "button";
+        button.dataset.eventId = String(event.id);
+        button.dataset.status = status;
+        button.textContent = label;
+        actions.append(button);
+      }
+      actionCell.append(actions);
+    } else {
+      const label = document.createElement("span");
+      label.className = "muted-text";
+      label.textContent = "finalizado";
+      actionCell.append(label);
+    }
+    row.append(actionCell);
+    elements.hermesEventsTableBody.append(row);
+  }
 }
 
 async function refreshDashboard() {
