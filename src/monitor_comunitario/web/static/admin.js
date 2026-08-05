@@ -1,5 +1,28 @@
+const CSRF_COOKIE_NAME = "monitor_admin_csrf";
+
+function getCookieValue(name) {
+  const prefix = `${name}=`;
+  const cookie = document.cookie.split("; ").find((entry) => entry.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : "";
+}
+
+function withCsrf(options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) {
+    return options;
+  }
+
+  const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
+  return {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+    },
+  };
+}
 async function fetchJson(path, options = {}) {
-  const response = await fetch(path, options);
+  const response = await fetch(path, withCsrf(options));
   let payload = null;
 
   try {
