@@ -10,6 +10,7 @@ def production_settings(**overrides: object) -> Settings:
         "app_env": "production",
         "database_url": "postgresql+psycopg://app:long-secret@db.example.com/app",
         "admin_api_key": "a" * 32,
+        "redis_url": "redis://redis:6379/0",
     }
     values.update(overrides)
     return Settings(**values)

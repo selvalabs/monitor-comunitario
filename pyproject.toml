@@ -22,7 +22,8 @@ dependencies = [
   "apscheduler>=3.10",
   "rapidfuzz>=3.9",
   "python-dotenv>=1.0",
-  "structlog>=24.0"
+  "structlog>=24.0",
+  "redis>=5.0"
 ]
 
 [project.scripts]

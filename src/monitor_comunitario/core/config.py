@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     app_timezone: str = "America/Sao_Paulo"
     database_url: str = "sqlite:///./data/monitor_comunitario.db"
     admin_api_key: str = ""
+    redis_url: str = ""
+    rate_limit_register_limit: int = 5
+    rate_limit_register_window_seconds: int = 600
+    rate_limit_member_limit: int = 10
+    rate_limit_member_window_seconds: int = 300
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
     scraper_headless: bool = True
@@ -66,7 +71,8 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production rejects placeholder admin API keys")
     if "monitor:monitor@" in database_url:
         raise ValueError("production rejects example database credentials")
-
+    if not settings.redis_url.startswith(("redis://", "rediss://")):
+        raise ValueError("production requires a Redis URL for rate limiting")
 
 @lru_cache
 def get_settings() -> Settings:
