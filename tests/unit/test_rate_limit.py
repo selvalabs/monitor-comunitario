@@ -40,7 +40,7 @@ def test_rate_limiter_keeps_keys_isolated() -> None:
 def test_production_requires_redis_url() -> None:
     settings = Settings(
         app_env="production",
-        database_url="postgresql+psycopg://app:secret@db.example.com/app",
+        database_url="postgresql+psycopg://app:secret@db.example.com/app?sslmode=require",
         admin_api_key="a" * 32,
     )
 
