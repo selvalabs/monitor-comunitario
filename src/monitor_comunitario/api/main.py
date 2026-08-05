@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+﻿from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -22,6 +22,7 @@ from monitor_comunitario.core.config import get_settings, validate_runtime_setti
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.diagnostics import ReadinessRead
+from monitor_comunitario.services.rate_limit import get_rate_limit_store
 
 settings = get_settings()
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -31,6 +32,11 @@ SessionDep = Annotated[Session, Depends(get_session)]
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize local database structures when the API starts."""
     validate_runtime_settings(settings)
+    if settings.app_env.lower() == "production":
+        store = get_rate_limit_store()
+        if store is None:
+            raise RuntimeError("production requires Redis rate limiting")
+        store.ping()
     init_db()
     yield
 

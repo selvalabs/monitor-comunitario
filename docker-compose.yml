@@ -1,4 +1,14 @@
 services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - monitor_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -42,6 +52,8 @@ services:
     volumes:
       - ./snapshots:/app/snapshots
     depends_on:
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
@@ -56,9 +68,12 @@ services:
     volumes:
       - ./snapshots:/app/snapshots
     depends_on:
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:
   monitor_postgres_data:
+  monitor_redis_data:

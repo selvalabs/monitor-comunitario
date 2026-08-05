@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     app_timezone: str = "America/Sao_Paulo"
     database_url: str = "sqlite:///./data/monitor_comunitario.db"
     admin_api_key: str = ""
+    redis_url: str = ""
+    rate_limit_register_limit: int = 5
+    rate_limit_register_window_seconds: int = 600
+    rate_limit_member_limit: int = 10
+    rate_limit_member_window_seconds: int = 300
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
     scraper_headless: bool = True
@@ -67,6 +72,25 @@ def validate_runtime_settings(settings: Settings) -> None:
     if "monitor:monitor@" in database_url:
         raise ValueError("production rejects example database credentials")
 
+
+def validate_runtime_settings(settings: Settings) -> None:
+    """Reject configuration values that would make a production deploy unsafe."""
+    if settings.app_env.lower() != "production":
+        return
+
+    database_url = settings.database_url.lower()
+    admin_api_key = settings.admin_api_key
+
+    if database_url.startswith("sqlite"):
+        raise ValueError("production requires a PostgreSQL database")
+    if len(admin_api_key) < 32:
+        raise ValueError("production requires an admin API key with at least 32 characters")
+    if admin_api_key.lower() in {"change-me-local-admin-key", "change-me"}:
+        raise ValueError("production rejects placeholder admin API keys")
+    if "monitor:monitor@" in database_url:
+        raise ValueError("production rejects example database credentials")
+    if not settings.redis_url.startswith(("redis://", "rediss://")):
+        raise ValueError("production requires a Redis URL for rate limiting")
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,16 +1,23 @@
 ﻿from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from monitor_comunitario.api.security import require_admin_api_key
+from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import User
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.users import UserCreate, UserCreatedRead, UserRead, UserUpdate
 from monitor_comunitario.services.hermes_events import create_hermes_event
 from monitor_comunitario.services.member_access import generate_access_code, hash_access_code
+from monitor_comunitario.services.rate_limit import (
+    RateLimitExceeded,
+    RateLimitUnavailable,
+    enforce_rate_limit,
+    rate_limit_key,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 admin_router = APIRouter(
@@ -30,9 +37,33 @@ def utc_now() -> datetime:
 @router.post("", response_model=UserCreatedRead, status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
+    request: Request,
     session: SessionDep,
 ) -> UserCreatedRead:
     """Create a monitored user/address record and return a one-time access code."""
+    settings = get_settings()
+    client_ip = request.headers.get(
+        "x-forwarded-for",
+        request.client.host if request.client else "unknown",
+    )
+    try:
+        enforce_rate_limit(
+            rate_limit_key("user-registration", client_ip),
+            limit=settings.rate_limit_register_limit,
+            window_seconds=settings.rate_limit_register_window_seconds,
+        )
+    except RateLimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many registration attempts. Try again later.",
+            headers={"Retry-After": str(error.retry_after)},
+        ) from error
+    except RateLimitUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration service temporarily unavailable.",
+        ) from error
+
     access_code = generate_access_code()
     user = User(
         **payload.model_dump(),
