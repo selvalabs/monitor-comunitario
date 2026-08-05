@@ -1,4 +1,4 @@
-# Handoff - Monitor Comunitario
+﻿# Handoff - Monitor Comunitario
 
 Este arquivo registra continuidade operacional entre sessoes/agentes.
 
@@ -87,7 +87,7 @@ uv run monitor-comunitario db-current
 - Nao executar novo deploy sem novo backup, preflight e rollback explicito.
 - Redis de producao usa credencial protegida fora do repositorio.
 - Rate limiting de aplicacao esta ativo no cadastro e no acesso do morador.
-- Rate limiting adicional no Traefik e migracao da chave administrativa para sessao HttpOnly continuam pendentes.
+- Rate limiting adicional no Traefik e sessao administrativa HttpOnly estao ativos em producao.
 
 ## Proximas acoes
 
@@ -102,6 +102,19 @@ uv run monitor-comunitario db-current
    - criar produtores futuros para suporte/privacy quando houver entrada de mensagens.
 3. Continuar mantendo WhatsApp, webhook publico e LLM user-facing fora de escopo ate nova decisao/ADR.
 
+## Atualizacao 2026-08-05
+#85 - deploy da sessao administrativa HttpOnly
+
+- PR #84 mergeado na main no commit `ba82579`.
+- Backup dedicado criado antes do deploy em `/opt/hermes/venusiana/data/backups/monitor-comunitario-20260805-140741`.
+- API, worker e Redis do Monitor estao saudaveis; nenhum outro servico da VPS foi alterado.
+- Banco Supabase permanece no head `20260724_0004`.
+- Login `POST /admin/session` validado com cookie HttpOnly, Secure, SameSite=strict e TTL de 3600 segundos.
+- Endpoint administrativo protegido respondeu 200 usando somente o cookie; chave nao foi persistida no navegador.
+- HTTPS respondeu 200 e headers de seguranca continuam ativos.
+- Nao houve erros recentes nos logs de API/worker.
+
+Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habilitar canal externo real sem nova decisao/ADR.
 ## Template para futuras atualizacoes
 
 ```text
