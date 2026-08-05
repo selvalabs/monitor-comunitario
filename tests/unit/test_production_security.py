@@ -8,7 +8,7 @@ from monitor_comunitario.core.config import Settings, validate_runtime_settings
 def production_settings(**overrides: object) -> Settings:
     values: dict[str, object] = {
         "app_env": "production",
-        "database_url": "postgresql+psycopg://app:long-secret@db.example.com/app",
+        "database_url": "postgresql+psycopg://app:long-secret@db.example.com/app?sslmode=require",
         "admin_api_key": "a" * 32,
         "redis_url": "redis://redis:6379/0",
     }
@@ -35,6 +35,14 @@ def test_production_settings_reject_insecure_values(field: str, value: str) -> N
         validate_runtime_settings(production_settings(**{field: value}))
 
 
+
+def test_production_settings_reject_database_without_tls() -> None:
+    with pytest.raises(ValueError, match="TLS"):
+        validate_runtime_settings(
+            production_settings(
+                database_url="postgresql+psycopg://app:long-secret@db.example.com/app"
+            )
+        )
 def test_non_production_settings_keep_local_defaults_usable() -> None:
     validate_runtime_settings(Settings())
 

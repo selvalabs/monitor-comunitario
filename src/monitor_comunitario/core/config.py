@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import parse_qs, urlsplit
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -66,6 +67,9 @@ def validate_runtime_settings(settings: Settings) -> None:
 
     if database_url.startswith("sqlite"):
         raise ValueError("production requires a PostgreSQL database")
+    ssl_modes = parse_qs(urlsplit(settings.database_url).query).get("sslmode", [])
+    if not ssl_modes or ssl_modes[0].lower() not in {"require", "verify-ca", "verify-full"}:
+        raise ValueError("production requires TLS for the database connection")
     if len(admin_api_key) < 32:
         raise ValueError("production requires an admin API key with at least 32 characters")
     if admin_api_key.lower() in {"change-me-local-admin-key", "change-me"}:
