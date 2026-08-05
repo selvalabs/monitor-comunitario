@@ -9,6 +9,9 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 - Projeto: Monitor Comunitario - Celesc Outage Watcher.
 - Estado: MVP tecnico com documentacao, CI, Docker, scraper, parser, matcher, area do morador, admin protegido e worker diario.
 - Protocolo: SelvaLabs Agent OS, read-only first, issue/branch/PR/CI/handoff, Notion/Cerebro ao fim de cada etapa.
+- Produção: deploy endurecido verificado em 2026-08-05 no commit 7652996 da main.
+- Produção: API, worker e Redis privado saudáveis; portas diretas da API e do Redis não estão públicas.
+- Produção: banco Supabase em 20260724_0004; migration obsoleta residual foi removida somente do diretório remoto após backup específico do projeto.
 
 ## Trabalho atual
 
@@ -34,13 +37,13 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
   - Telegram real habilitado por padrao;
   - webhook publico;
   - credenciais reais;
-  - deploy;
+  - novo deploy sem preflight/autorizacao;
   - chamada LLM em fluxo user-facing;
-  - Supabase.
+  - substituicao do Supabase como banco de producao.
 
 ## Validacao recente
 
-Rodada em `main` apos PR #53:
+Rodada em `main` apos PRs de hardening #71, #73, #75 e #78:
 
 ```powershell
 node --check src/monitor_comunitario/web/static/admin.js
@@ -49,7 +52,7 @@ uv run mypy src
 uv run pytest
 ```
 
-Resultado registrado: `86 passed, 1 warning`.
+Resultado registrado: `108 passed, 1 warning`; Ruff e Mypy limpos.
 
 Banco local SQLite validado ate a migration Alembic head `20260724_0004`.
 
@@ -73,6 +76,18 @@ uv run monitor-comunitario db-current
   - `#49` - escalacao Telegram quando habilitada;
   - `#51` - PATCH admin de status Hermes;
   - `#53` - acoes de status Hermes no dashboard.
+- PRs de hardening mergeados:
+  - #71 - correcao de XSS armazenado no dashboard;
+  - #73 - fechamento de portas diretas do Compose;
+  - #75 - fail-closed de producao e headers de seguranca;
+  - #78 - Redis privado e rate limiting distribuido.
+
+## Estado operacional atual
+
+- Nao executar novo deploy sem novo backup, preflight e rollback explicito.
+- Redis de producao usa credencial protegida fora do repositorio.
+- Rate limiting de aplicacao esta ativo no cadastro e no acesso do morador.
+- Rate limiting adicional no Traefik e migracao da chave administrativa para sessao HttpOnly continuam pendentes.
 
 ## Proximas acoes
 
