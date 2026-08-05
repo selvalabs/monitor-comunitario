@@ -10,8 +10,8 @@ def test_admin_dashboard_page_is_served_by_direct_url() -> None:
     assert response.status_code == 200
     assert "Painel de diagnóstico" in response.text
     assert "ADMIN_API_KEY" in response.text
-    assert "sessionStorage" in response.text
-    assert "X-Admin-API-Key" in response.text
+    assert "sessionStorage" not in response.text
+    assert "X-Admin-API-Key" not in response.text
     assert "theme-selector" in response.text
     assert "language-selector" in response.text
     assert "/static/preferences.js" in response.text
@@ -31,8 +31,9 @@ def test_admin_dashboard_javascript_is_served_without_hardcoded_key() -> None:
         response = client.get("/static/admin.js")
 
     assert response.status_code == 200
-    assert "sessionStorage" in response.text
+    assert "sessionStorage" not in response.text
     assert "X-Admin-API-Key" in response.text
+    assert "/admin/session" in response.text
     assert "/admin/diagnostics" in response.text
     assert "/admin/hermes/events?limit=10" in response.text
     assert "/admin/runs/manual" in response.text
