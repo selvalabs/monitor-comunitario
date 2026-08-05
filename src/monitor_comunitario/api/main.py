@@ -1,4 +1,4 @@
-﻿from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -18,7 +18,7 @@ from monitor_comunitario.api.routes_users import admin_router as admin_users_rou
 from monitor_comunitario.api.routes_users import router as users_router
 from monitor_comunitario.api.routes_web import STATIC_DIR
 from monitor_comunitario.api.routes_web import router as web_router
-from monitor_comunitario.core.config import get_settings
+from monitor_comunitario.core.config import get_settings, validate_runtime_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.diagnostics import ReadinessRead
@@ -30,6 +30,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize local database structures when the API starts."""
+    validate_runtime_settings(settings)
     init_db()
     yield
 
@@ -42,6 +43,20 @@ app = FastAPI(
 )
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; script-src 'self'; style-src 'self'; "
+        "img-src 'self' data:; connect-src 'self'; object-src 'none'; "
+        "base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["X-Frame-Options"] = "DENY"
+    return response
 
 app.include_router(web_router)
 app.include_router(users_router)
