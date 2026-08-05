@@ -64,7 +64,7 @@ The admin dashboard is available by direct URL:
 /admin
 ```
 
-The key is entered manually in the browser and stored only in `sessionStorage`.
+The key is entered once to create a short-lived HttpOnly admin session cookie. The key is not stored in browser storage.
 
 Do not hardcode `ADMIN_API_KEY` into frontend JavaScript.
 

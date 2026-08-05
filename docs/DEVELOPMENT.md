@@ -23,13 +23,13 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 Pasta padrão:
 
 ```powershell
-C:\Users\carlo\projects\monitor-comunitario
+<project-root>
 ```
 
 ## 3. Instalação manual
 
 ```powershell
-cd C:\Users\carlo\projects
+cd <parent-directory>
 git clone <repo-url> monitor-comunitario
 cd monitor-comunitario
 

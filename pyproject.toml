@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
-  { name = "Carlos Selva", email = "carlostselva@gmail.com" }
+  { name = "Carlos Selva", email = "selvalabs@users.noreply.github.com" }
 ]
 dependencies = [
   "fastapi>=0.115",

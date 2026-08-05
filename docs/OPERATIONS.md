@@ -62,7 +62,7 @@ Allows a resident to access their member area with phone + private code.
 
 ## Protected admin endpoints
 
-All `/admin/*` API endpoints require the `X-Admin-API-Key` header.
+Admin API endpoints require an authenticated HttpOnly session cookie. The `X-Admin-API-Key` header is used only to create a session or for controlled CLI access.
 
 ```http
 X-Admin-API-Key: <strong-admin-api-key>
@@ -142,7 +142,7 @@ The project serves a simple internal admin dashboard at:
 
 The dashboard is intentionally not linked from the public homepage. It is meant for direct internal access by the operator.
 
-The page itself is public static HTML, but protected data requests still require `ADMIN_API_KEY`. The key is not hardcoded into JavaScript. The operator enters it manually in the browser, and the frontend stores it only in `sessionStorage` for the current browser session.
+The page itself is public static HTML, but protected data requests require an authenticated HttpOnly session cookie. The key is not hardcoded into JavaScript or stored in browser storage.
 
 The dashboard sends protected requests with:
 

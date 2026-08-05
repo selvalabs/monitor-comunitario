@@ -115,6 +115,15 @@ uv run monitor-comunitario db-current
 - Nao houve erros recentes nos logs de API/worker.
 
 Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habilitar canal externo real sem nova decisao/ADR.
+## Atualizacao de hardening 2026-08-05
+
+- PR #88 mergeado: `X-Forwarded-For` so e aceito de proxies configurados em `TRUSTED_PROXY_IPS`.
+- PR #89 mergeado: Bandit, pip-audit, CodeQL, Gitleaks e Dependabot configurados.
+- Dependabot security updates, Secret Scanning e push protection estao habilitados no GitHub.
+- `main` esta protegida com PR obrigatorio, uma aprovacao e checks de qualidade/seguranca.
+- `pydantic-settings` foi atualizado para `2.14.2` apos auditoria encontrar vulnerabilidade na versao anterior.
+- Branches remotas antigas ja mergeadas foram removidas; branches divergentes e Dependabot foram preservadas.
+- PR #95 registra a remocao do script destrutivo e a limpeza de metadados pessoais/caminhos locais.
 ## Template para futuras atualizacoes
 
 ```text
