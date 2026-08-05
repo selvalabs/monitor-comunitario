@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    env_file:
+      - .env.production
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"]
+    volumes:
+      - monitor_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   migrate:
     container_name: monitor-comunitario-migrate
     build:
@@ -20,8 +33,8 @@ services:
       --port 8000
     env_file:
       - .env.production
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.monitor-comunitario.rule=Host(`monitorcomunitario.soberania.cloud`)"
@@ -32,6 +45,8 @@ services:
     volumes:
       - ./snapshots:/app/snapshots
     depends_on:
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     healthcheck:
@@ -53,6 +68,11 @@ services:
     volumes:
       - ./snapshots:/app/snapshots
     depends_on:
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
+
+volumes:
+  monitor_redis_data:

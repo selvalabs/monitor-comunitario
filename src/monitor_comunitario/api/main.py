@@ -18,10 +18,11 @@ from monitor_comunitario.api.routes_users import admin_router as admin_users_rou
 from monitor_comunitario.api.routes_users import router as users_router
 from monitor_comunitario.api.routes_web import STATIC_DIR
 from monitor_comunitario.api.routes_web import router as web_router
-from monitor_comunitario.core.config import get_settings
+from monitor_comunitario.core.config import get_settings, validate_runtime_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.diagnostics import ReadinessRead
+from monitor_comunitario.services.rate_limit import get_rate_limit_store
 
 settings = get_settings()
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -30,6 +31,12 @@ SessionDep = Annotated[Session, Depends(get_session)]
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Initialize local database structures when the API starts."""
+    validate_runtime_settings(settings)
+    if settings.app_env.lower() == "production":
+        store = get_rate_limit_store()
+        if store is None:
+            raise RuntimeError("production requires Redis rate limiting")
+        store.ping()
     init_db()
     yield
 
