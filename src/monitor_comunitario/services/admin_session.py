@@ -4,7 +4,9 @@ import time
 from secrets import token_urlsafe
 
 SESSION_COOKIE_NAME = "monitor_admin_session"
+CSRF_COOKIE_NAME = "monitor_admin_csrf"
 SESSION_TTL_SECONDS = 3600
+CSRF_TOKEN_LENGTH = 32
 
 
 def create_session_token(api_key: str, now: int | None = None) -> str:

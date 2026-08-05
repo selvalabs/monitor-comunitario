@@ -1,7 +1,13 @@
 import pytest
+import redis
 
 from monitor_comunitario.core.config import Settings, validate_runtime_settings
-from monitor_comunitario.services.rate_limit import RateLimiter, RateLimitExceeded
+from monitor_comunitario.services.rate_limit import (
+    RateLimiter,
+    RateLimitExceeded,
+    RateLimitUnavailable,
+    enforce_rate_limit,
+)
 
 
 class FakeStore:
@@ -37,6 +43,19 @@ def test_rate_limiter_keeps_keys_isolated() -> None:
     limiter.check("member:ip-a:phone", limit=1, window_seconds=60)
     limiter.check("member:ip-b:phone", limit=1, window_seconds=60)
 
+
+def test_rate_limit_fails_closed_when_redis_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    class BrokenStore:
+        def increment(self, key: str, window_seconds: int) -> tuple[int, int]:
+            raise redis.RedisError("connection failed")
+
+    monkeypatch.setattr(
+        "monitor_comunitario.services.rate_limit.get_rate_limit_store",
+        lambda: BrokenStore(),
+    )
+
+    with pytest.raises(RateLimitUnavailable):
+        enforce_rate_limit("register:ip", limit=1, window_seconds=60)
 def test_production_requires_redis_url() -> None:
     settings = Settings(
         app_env="production",
