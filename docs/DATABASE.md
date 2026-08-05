@@ -57,7 +57,7 @@ docker compose -f docker-compose.supabase.yml --env-file .env.supabase up --buil
 
 ## Admin API key
 
-Admin routes are protected by the `X-Admin-API-Key` header.
+Admin routes require an authenticated HttpOnly session cookie; the `X-Admin-API-Key` header is used for session creation or controlled CLI access.
 
 Configure a strong key before exposing the API:
 

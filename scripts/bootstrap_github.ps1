@@ -1,10 +1,10 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 
 param(
     [string]$RepoName = "monitor-comunitario",
     [string]$Description = "Monitor publico de desligamentos programados da Celesc com alertas por endereco.",
     [string]$GitName = "Carlos Selva",
-    [string]$GitEmail = "carlostselva@gmail.com",
+    [string]$GitEmail = "selvalabs@users.noreply.github.com",
     [switch]$Private,
     [switch]$FreshGit,
     [switch]$DeleteExistingRemote
