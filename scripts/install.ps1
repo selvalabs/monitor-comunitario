@@ -1,9 +1,9 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 
 param(
     [string]$TargetDir = "$env:USERPROFILE\projects\monitor-comunitario",
     [string]$GitName = "Carlos Selva",
-    [string]$GitEmail = "carlostselva@gmail.com",
+    [string]$GitEmail = "selvalabs@users.noreply.github.com",
     [switch]$Force,
     [switch]$SkipPlaywright
 )
@@ -113,5 +113,4 @@ Write-Host "Next commands:"
 Write-Host "cd `"$TargetDir`""
 Write-Host "uv run uvicorn monitor_comunitario.api.main:app --reload"
 Write-Host ""
-Write-Host "To create/recreate the GitHub repository:"
-Write-Host ".\scripts\reset_and_recreate_github.ps1 -DeleteRemote"
+Write-Host "Use scripts/bootstrap_github.ps1 for non-destructive GitHub setup."
