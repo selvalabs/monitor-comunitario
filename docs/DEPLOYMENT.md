@@ -283,7 +283,7 @@ Before a real deployment:
 [ ] /health returns 200
 [ ] /ready returns 200
 [ ] /admin opens by direct URL
-[ ] /admin/diagnostics works with X-Admin-API-Key
+[ ] /admin/diagnostics works with the admin session cookie and CSRF token
 [ ] worker logs show scheduled execution
 [ ] docker-ops allowlist matches the real Compose container names when using guarded VPS deploy
 [ ] snapshots volume is writable

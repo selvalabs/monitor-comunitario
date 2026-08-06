@@ -5,7 +5,7 @@
 - Dados pessoais: nome, telefone/WhatsApp, município, bairro, rua, número, CEP e preferências de alerta.
 - Fonte externa pública: página pública de avisos de desligamentos da Celesc.
 - Integrações externas potenciais: Evolution API/WhatsApp, Supabase/Postgres, analytics/ads quando habilitados.
-- Admin: rotas protegidas por `X-Admin-API-Key`.
+- Admin: rotas protegidas por sessão HttpOnly e token CSRF.
 
 ## Princípios
 

@@ -1,6 +1,7 @@
-﻿from collections.abc import Generator
+from collections.abc import Generator
 
 import pytest
+from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 
 from monitor_comunitario.api.main import app
@@ -27,8 +28,8 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Generator[TestClient, None, None]
     get_settings.cache_clear()
 
 
-def admin_headers() -> dict[str, str]:
-    return {"X-Admin-API-Key": ADMIN_API_KEY}
+def admin_headers(client: TestClient) -> dict[str, str]:
+    return admin_session_headers(client)
 
 
 def test_access_code_hash_verification() -> None:
@@ -64,7 +65,7 @@ def test_create_user_returns_one_time_access_code(client: TestClient) -> None:
 
     admin_read_response = client.get(
         f"/admin/users/{body['id']}",
-        headers=admin_headers(),
+        headers=admin_headers(client),
     )
 
     assert admin_read_response.status_code == 200

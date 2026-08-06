@@ -62,7 +62,7 @@ Allows a resident to access their member area with phone + private code.
 
 ## Protected admin endpoints
 
-Admin API endpoints require an authenticated HttpOnly session cookie. The `X-Admin-API-Key` header is used only to create a session or for controlled CLI access.
+Admin API endpoints require an authenticated HttpOnly session cookie. The `X-Admin-API-Key` header is used only to create a session. Protected requests use the HttpOnly session cookie and CSRF token.
 
 ```http
 X-Admin-API-Key: <strong-admin-api-key>

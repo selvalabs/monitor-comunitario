@@ -32,12 +32,11 @@ def validate_admin_api_key(provided_api_key: str | None) -> None:
 
 def require_admin_api_key(
     request: Request,
-    x_admin_api_key: Annotated[str | None, Header(alias="X-Admin-API-Key")] = None,
     admin_session: Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)] = None,
     csrf_cookie: Annotated[str | None, Cookie(alias=CSRF_COOKIE_NAME)] = None,
     csrf_header: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
 ) -> None:
-    """Require the legacy header or a valid session with CSRF protection."""
+    """Require a valid admin session with CSRF protection."""
     settings = get_settings()
     expected_api_key = settings.admin_api_key.strip()
 
@@ -46,9 +45,6 @@ def require_admin_api_key(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Admin API key is not configured.",
         )
-
-    if x_admin_api_key and compare_digest(x_admin_api_key.strip(), expected_api_key):
-        return
 
     if not admin_session or not verify_session_token(expected_api_key, admin_session):
         raise HTTPException(
