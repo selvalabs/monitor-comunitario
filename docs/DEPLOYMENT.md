@@ -34,6 +34,16 @@ APP_ENV=production
 APP_TIMEZONE=America/Sao_Paulo
 ```
 
+### Trusted proxy
+
+The API ignores `X-Forwarded-For` unless the direct peer belongs to an explicitly trusted proxy IP or CIDR list:
+
+```env
+TRUSTED_PROXY_IPS=172.16.15.1/32
+```
+
+Use the actual Docker bridge gateway or proxy network discovered during preflight. Do not copy this example blindly. Leave it empty when the proxy path is not verified; the application will then use the direct peer address safely.
+
 ### Database
 
 ```env
