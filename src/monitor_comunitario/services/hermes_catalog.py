@@ -137,6 +137,20 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
             "Vou limitar a resposta ao escopo do projeto."
         ),
     ),
+"member_phone_confirmation_v1": HermesTemplate(
+        key="member_phone_confirmation_v1",
+        intent=UserFacingIntent.ACCESS_MEMBER_AREA,
+        body=(
+            "Oi, {name}! Esta é uma confirmação do Monitor Comunitário. "
+            "Ao responder OK, você confirma que deseja receber notificações sobre "
+            "possíveis desligamentos programados ou falta de energia no "
+            "bairro/endereço cadastrado. "
+            "As informações são baseadas em avisos públicos e o Monitor Comunitário "
+            "não é um canal oficial da Celesc. "
+            "Saiba mais: {url} Responda OK para confirmar ou CANCELAR para não ativar o cadastro. "
+            "Sem resposta, a solicitação expira automaticamente."
+        ),
+    ),
     "human_escalation_v1": HermesTemplate(
         key="human_escalation_v1",
         intent=UserFacingIntent.UNKNOWN_ESCALATE,

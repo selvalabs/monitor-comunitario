@@ -183,3 +183,93 @@ def test_deactivate_user(client: TestClient) -> None:
 
     assert admin_delete_response.status_code == 200
     assert admin_delete_response.json()["is_active"] is False
+
+
+def test_email_and_whatsapp_verification_flow(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from monitor_comunitario.api import routes_users
+    from monitor_comunitario.services import email_verification
+
+    class FakeStore:
+        def __init__(self) -> None:
+            self.values: dict[str, dict[str, object]] = {}
+
+        def save(
+            self, email: str, phone: str, payload: dict[str, object], ttl_seconds: int
+        ) -> None:
+            self.values[email] = payload
+            self.values[phone] = payload
+
+        def load(self, email: str) -> dict[str, object] | None:
+            return self.values.get(email)
+
+        def load_by_phone(self, phone: str) -> dict[str, object] | None:
+            return self.values.get(phone)
+
+        def delete(self, email: str, phone: str) -> None:
+            self.values.pop(email, None)
+            self.values.pop(phone, None)
+
+    store = FakeStore()
+    delivered_emails: list[tuple[str, str]] = []
+    delivered_whatsapp: list[tuple[str, str]] = []
+    monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
+    monkeypatch.setenv("EVOLUTION_ENABLED", "true")
+    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "webhook-secret")
+    get_settings.cache_clear()
+    monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
+    monkeypatch.setattr(
+        email_verification,
+        "send_verification_email",
+        lambda *, email, otp: delivered_emails.append((email, otp)),
+    )
+    monkeypatch.setattr(
+        routes_users,
+        "_send_whatsapp",
+        lambda phone, text: delivered_whatsapp.append((phone, text)),
+    )
+
+    registration = client.post(
+        "/users",
+        json={
+            "name": "Email Verified",
+            "email": "person@example.com",
+            "phone": "5548999912345",
+            "municipality": "Florianópolis",
+        },
+    )
+    assert registration.status_code == 202
+    assert delivered_emails
+    assert client.get("/admin/users").status_code == 401
+
+    verify_email = client.post(
+        "/users/verify-email",
+        json={"email": delivered_emails[0][0], "otp": delivered_emails[0][1]},
+    )
+    assert verify_email.status_code == 200
+    assert verify_email.json()["status"] == "pending_phone_verification"
+    assert delivered_whatsapp[0][0] == "5548999912345"
+    assert "Responda OK" in delivered_whatsapp[0][1]
+
+    webhook = client.post(
+        "/users/webhooks/evolution",
+        headers={"X-Hermes-Webhook-Secret": "webhook-secret"},
+        json={
+            "data": {
+                "key": {"remoteJid": "5548999912345@s.whatsapp.net"},
+                "message": {"conversation": "OK"},
+            }
+        },
+    )
+    assert webhook.status_code == 200
+    assert webhook.json()["status"] == "confirmed"
+    assert len(delivered_whatsapp) == 2
+
+    access = client.post(
+        "/member/access",
+        json={"phone": "5548999912345", "access_code": "invalid"},
+    )
+    assert access.status_code == 401
+    get_settings.cache_clear()

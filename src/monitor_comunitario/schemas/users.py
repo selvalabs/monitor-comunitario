@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserBase(BaseModel):
+    email: str = Field(default="", max_length=320)
     name: str = Field(min_length=2, max_length=160)
     phone: str = Field(min_length=8, max_length=40)
     municipality: str = Field(min_length=2, max_length=120)
@@ -17,6 +18,15 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     pass
 
+
+class RegistrationPendingRead(BaseModel):
+    status: str = "pending_email_verification"
+    message: str
+
+
+class EmailVerificationRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=320)
+    otp: str = Field(min_length=6, max_length=6)
 
 class UserUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)

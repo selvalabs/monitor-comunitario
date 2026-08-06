@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     rate_limit_register_window_seconds: int = 600
     rate_limit_member_limit: int = 10
     rate_limit_member_window_seconds: int = 300
+    email_verification_enabled: bool = False
+    email_verification_ttl_seconds: int = 900
+    email_verification_max_attempts: int = 5
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_tls: bool = True
+    email_from: str = ""
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
     scraper_headless: bool = True
@@ -39,6 +48,8 @@ class Settings(BaseSettings):
     evolution_api_key: str = ""
     evolution_instance: str = ""
     evolution_enabled: bool = False
+    evolution_webhook_secret: str = ""
+    member_area_url: str = "https://monitorcomunitario.soberania.cloud/member"
 
     hermes_telegram_enabled: bool = False
     hermes_telegram_bot_token: str = ""
@@ -78,6 +89,12 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production rejects example database credentials")
     if not settings.redis_url.startswith(("redis://", "rediss://")):
         raise ValueError("production requires a Redis URL for rate limiting")
+    if not settings.email_verification_enabled:
+        raise ValueError("production requires email verification before public registration")
+    if not settings.smtp_host or not settings.email_from:
+        raise ValueError("production requires SMTP settings for email verification")
+    if not settings.evolution_enabled or not settings.evolution_webhook_secret:
+        raise ValueError("production requires Evolution webhook settings for phone verification")
 
 @lru_cache
 def get_settings() -> Settings:

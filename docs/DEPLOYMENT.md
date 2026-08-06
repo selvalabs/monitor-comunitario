@@ -60,6 +60,27 @@ DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<password>@aws-<pooler-
 
 Use the pooler host shown by the Supabase project dashboard/API for the specific project. Do not infer the pooler index from another project.
 
+### Registration verification
+
+Production registration is fail-closed and requires email OTP followed by WhatsApp confirmation.
+
+```env
+EMAIL_VERIFICATION_ENABLED=true
+EMAIL_VERIFICATION_TTL_SECONDS=900
+EMAIL_VERIFICATION_MAX_ATTEMPTS=5
+SMTP_HOST=<smtp-host>
+SMTP_PORT=587
+SMTP_USERNAME=<smtp-user>
+SMTP_PASSWORD=<smtp-password>
+SMTP_TLS=true
+EMAIL_FROM=<verified-sender-email>
+EVOLUTION_ENABLED=true
+EVOLUTION_WEBHOOK_SECRET=<strong-webhook-secret>
+MEMBER_AREA_URL=https://monitorcomunitario.soberania.cloud/member
+```
+
+Configure Evolution to POST inbound messages to `/users/webhooks/evolution` and send the header `X-Hermes-Webhook-Secret` with the configured secret. Only exact `OK` confirms the phone; `CANCELAR` deletes the pending registration and no reply expires it.
+
 ### Admin access
 
 All `/admin/*` endpoints require:

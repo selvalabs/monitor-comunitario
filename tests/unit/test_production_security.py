@@ -11,6 +11,11 @@ def production_settings(**overrides: object) -> Settings:
         "database_url": "postgresql+psycopg://app:long-secret@db.example.com/app?sslmode=require",
         "admin_api_key": "a" * 32,
         "redis_url": "redis://redis:6379/0",
+        "email_verification_enabled": True,
+        "smtp_host": "smtp.example.com",
+        "email_from": "noreply@example.com",
+        "evolution_enabled": True,
+        "evolution_webhook_secret": "b" * 32,
     }
     values.update(overrides)
     return Settings(**values)

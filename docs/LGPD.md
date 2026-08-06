@@ -64,3 +64,8 @@ Os textos adicionados são base técnica e informativa para portfólio, não sub
 A área do morador oferece exclusão permanente autenticada pelo telefone e código privado. A confirmação exige uma segunda etapa visual e o código é validado novamente no backend. A exclusão remove o cadastro e os registros derivados de alertas, matches e eventos relacionados.
 
 A retenção automática de cadastros apenas desativados permanece fora desta etapa até que o prazo operacional seja definido.
+
+
+## Cadastro verificado
+
+O cadastro público permanece pendente no Redis até a confirmação do e-mail e do telefone. O OTP tem expiração e limite de tentativas. Após o e-mail, o sistema envia uma mensagem WhatsApp determinística; somente `OK` ativa o cadastro, `CANCELAR` remove o pendente e a ausência de resposta expira a solicitação.
