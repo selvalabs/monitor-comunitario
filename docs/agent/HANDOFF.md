@@ -9,7 +9,7 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 - Projeto: Monitor Comunitario - Celesc Outage Watcher.
 - Estado: MVP tecnico com documentacao, CI, Docker, scraper, parser, matcher, area do morador, admin protegido e worker diario.
 - Protocolo: SelvaLabs Agent OS, read-only first, issue/branch/PR/CI/handoff, Notion/Cerebro ao fim de cada etapa.
-- Produção: deploy endurecido verificado em 2026-08-05 no commit 626267a da main.
+- Produção: deploy endurecido verificado em 2026-08-05 no commit 5013646 da main.
 - Produção: API, worker e Redis privado saudáveis; portas diretas da API e do Redis não estão públicas.
 - Produção: banco Supabase em 20260724_0004; migration obsoleta residual foi removida somente do diretório remoto após backup específico do projeto.
 
@@ -81,6 +81,14 @@ uv run monitor-comunitario db-current
   - #73 - fechamento de portas diretas do Compose;
   - #75 - fail-closed de producao e headers de seguranca;
   - #78 - Redis privado e rate limiting distribuido.
+  - #82 - rate limiting adicional no Traefik.
+  - #84 - sessao administrativa HttpOnly.
+  - #88 - validacao de proxy confiavel para `X-Forwarded-For`.
+  - #89 - Bandit, pip-audit, CodeQL, Gitleaks e Dependabot.
+  - #95 - remocao do script destrutivo e limpeza de metadados pessoais.
+  - #96 - validacao explicita de TLS no banco de producao.
+  - #98 - protecao CSRF para sessoes administrativas.
+  - #99 - remocao do fallback de chave administrativa em rotas protegidas.
 
 ## Estado operacional atual
 
@@ -131,6 +139,15 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Backup dedicado: `/opt/hermes/venusiana/data/backups/monitor-comunitario-20260805-155604`.
 - Validacao TLS de banco esta ativa e `pydantic-settings` em execucao e `2.14.2`.
 - API/worker/Redis saudaveis, banco em `20260724_0004`, sessao admin e HTTPS verificados.
+- Nenhum outro servico da VPS foi reiniciado ou alterado.
+## Atualizacao de producao 2026-08-05 - hardening final
+
+- PR #99 foi mergeado e publicado no Monitor Comunitario.
+- Commit em execucao: `5013646`.
+- Backup dedicado: `/opt/hermes/venusiana/data/backups/monitor-comunitario-20260805-220001`.
+- Imagem nova de `api` e `worker` confirmada em execucao apos recriacao explicita dos containers.
+- Fluxo administrativo validado: login `200`; mutacao sem CSRF `403`; mutacao com CSRF para ID inexistente `404`.
+- API, worker e Redis saudaveis; endpoint HTTPS de health respondeu `200`; sem erros recentes nos logs.
 - Nenhum outro servico da VPS foi reiniciado ou alterado.
 ## Template para futuras atualizacoes
 
