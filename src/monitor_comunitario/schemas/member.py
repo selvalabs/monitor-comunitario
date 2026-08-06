@@ -9,6 +9,9 @@ class MemberAccessRequest(BaseModel):
     access_code: str = Field(min_length=4, max_length=40)
 
 
+class MemberDeleteRequest(MemberAccessRequest):
+    """Credentials required before permanently deleting member data."""
+
 class MemberAccessRead(BaseModel):
     user: UserRead
     notifications: list[NotificationRead]
