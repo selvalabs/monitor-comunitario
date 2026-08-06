@@ -3,6 +3,12 @@ const memberStatus = document.querySelector("#member-status");
 const memberPanel = document.querySelector("#member-panel");
 const clearSessionButton = document.querySelector("#clear-member-session");
 const memberNotifications = document.querySelector("#member-notifications");
+const openDeleteButton = document.querySelector("#open-delete-member");
+const deleteConfirmation = document.querySelector("#delete-member-confirmation");
+const deleteAccessCode = document.querySelector("#delete-access-code");
+const deleteCheck = document.querySelector("#delete-member-check");
+const confirmDeleteButton = document.querySelector("#confirm-delete-member");
+const cancelDeleteButton = document.querySelector("#cancel-delete-member");
 
 const memberSessionKey = "monitor-comunitario:member-session";
 
@@ -35,6 +41,16 @@ function clearMemberSession() {
   setMemberStatus("Sessão limpa. Informe telefone e código para acessar novamente.");
 }
 
+function resetDeleteConfirmation() {
+  deleteConfirmation.hidden = true;
+  deleteAccessCode.value = "";
+  deleteCheck.checked = false;
+  confirmDeleteButton.disabled = true;
+}
+
+function updateDeleteButtonState() {
+  confirmDeleteButton.disabled = !deleteCheck.checked || !deleteAccessCode.value.trim();
+}
 function buildNotificationSummary(notification) {
   const message = String(notification.message || "").trim();
 
@@ -144,6 +160,46 @@ accessForm.addEventListener("submit", async (event) => {
 });
 
 clearSessionButton.addEventListener("click", clearMemberSession);
+
+openDeleteButton.addEventListener("click", () => {
+  deleteConfirmation.hidden = false;
+  deleteAccessCode.focus();
+});
+
+cancelDeleteButton.addEventListener("click", resetDeleteConfirmation);
+deleteAccessCode.addEventListener("input", updateDeleteButtonState);
+deleteCheck.addEventListener("change", updateDeleteButtonState);
+
+confirmDeleteButton.addEventListener("click", async () => {
+  const session = getMemberSession();
+  if (!session?.user?.phone) {
+    setMemberStatus("A sessão do morador expirou. Acesse novamente.", true);
+    return;
+  }
+
+  confirmDeleteButton.disabled = true;
+  setMemberStatus("Excluindo seus dados...");
+  try {
+    const response = await fetch("/member/account", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: session.user.phone,
+        access_code: deleteAccessCode.value.trim(),
+      }),
+    });
+    if (!response.ok) {
+      const body = await response.json();
+      throw new Error(body.detail || "Não foi possível excluir o cadastro.");
+    }
+    clearMemberSession();
+    resetDeleteConfirmation();
+    setMemberStatus("Cadastro e dados relacionados excluídos permanentemente.");
+  } catch (error) {
+    confirmDeleteButton.disabled = false;
+    setMemberStatus(error.message, true);
+  }
+});
 
 const storedSession = getMemberSession();
 

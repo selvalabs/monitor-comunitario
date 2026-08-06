@@ -133,6 +133,34 @@
             <h2>Últimos avisos</h2>
             <div id="member-notifications" class="notifications-list" aria-live="polite"></div>
           </article>
+
+          <article class="panel danger-panel">
+            <p class="eyebrow">Privacidade</p>
+            <h2>Excluir cadastro</h2>
+            <p>Esta ação remove permanentemente seu cadastro, endereço e histórico de alertas.</p>
+            <button id="open-delete-member" class="button button-danger" type="button">
+              Excluir meus dados
+            </button>
+            <div id="delete-member-confirmation" class="delete-confirmation" hidden>
+              <p><strong>Esta ação não pode ser desfeita.</strong> Confirme novamente para continuar.</p>
+              <label>
+                Código privado
+                <input id="delete-access-code" type="password" autocomplete="one-time-code" />
+              </label>
+              <label class="confirmation-check">
+                <input id="delete-member-check" type="checkbox" />
+                Entendo que meus dados serão excluídos permanentemente.
+              </label>
+              <div class="form-actions">
+                <button id="confirm-delete-member" class="button button-danger" type="button" disabled>
+                  Confirmar exclusão definitiva
+                </button>
+                <button id="cancel-delete-member" class="button button-secondary" type="button">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
     </main>

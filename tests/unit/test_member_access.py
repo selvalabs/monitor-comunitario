@@ -125,6 +125,48 @@ def test_member_access_rejects_invalid_code(client: TestClient) -> None:
     assert response.json()["detail"] == "Invalid phone or access code."
 
 
+def test_member_can_permanently_delete_account_with_private_code(client: TestClient) -> None:
+    phone = unique_phone("0004")
+    create_response = client.post(
+        "/users",
+        json={"name": "Delete Me", "phone": phone, "municipality": "Palhoça"},
+    )
+    created_user = create_response.json()
+
+    response = client.request(
+        "DELETE",
+        "/member/account",
+        json={"phone": phone, "access_code": created_user["access_code"]},
+    )
+
+    assert response.status_code == 204
+    assert client.post(
+        "/member/access",
+        json={"phone": phone, "access_code": created_user["access_code"]},
+    ).status_code == 401
+
+
+
+def test_member_account_deletion_requires_private_code(client: TestClient) -> None:
+    phone = unique_phone("0005")
+    create_response = client.post(
+        "/users",
+        json={"name": "Keep Me", "phone": phone, "municipality": "Palhoça"},
+    )
+
+    response = client.request(
+        "DELETE",
+        "/member/account",
+        json={"phone": phone, "access_code": "wrong-code"},
+    )
+
+    assert response.status_code == 401
+    assert client.post(
+        "/member/access",
+        json={"phone": phone, "access_code": create_response.json()["access_code"]},
+    ).status_code == 200
+
+
 def test_member_page_and_static_assets_are_served() -> None:
     with TestClient(app) as test_client:
         page_response = test_client.get("/member")
@@ -135,12 +177,14 @@ def test_member_page_and_static_assets_are_served() -> None:
     assert "Área do morador" in page_response.text
     assert "Telefone + código" in page_response.text
     assert "theme-selector" in page_response.text
+    assert "confirm-delete-member" in page_response.text
     assert "language-selector" in page_response.text
     assert "/static/preferences.js" in page_response.text
 
     assert script_response.status_code == 200
     assert "sessionStorage" in script_response.text
     assert "/member/access" in script_response.text
+    assert "/member/account" in script_response.text
 
     assert style_response.status_code == 200
     assert "member-main" in style_response.text

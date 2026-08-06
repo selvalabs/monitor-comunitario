@@ -7,9 +7,14 @@ from sqlalchemy.orm import Session
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import Notification, User
 from monitor_comunitario.db.session import get_session
-from monitor_comunitario.schemas.member import MemberAccessRead, MemberAccessRequest
+from monitor_comunitario.schemas.member import (
+    MemberAccessRead,
+    MemberAccessRequest,
+    MemberDeleteRequest,
+)
 from monitor_comunitario.schemas.notifications import NotificationRead
 from monitor_comunitario.schemas.users import UserRead
+from monitor_comunitario.services.data_retention import purge_user_data
 from monitor_comunitario.services.member_access import verify_access_code
 from monitor_comunitario.services.rate_limit import (
     RateLimitExceeded,
@@ -84,3 +89,46 @@ def access_member_area(
         user=UserRead.model_validate(user),
         notifications=_list_member_notifications(session=session, user_id=user.id),
     )
+
+
+@router.delete("/account", status_code=status.HTTP_204_NO_CONTENT)
+def delete_member_account(
+    payload: MemberDeleteRequest,
+    request: Request,
+    session: SessionDep,
+) -> None:
+    """Permanently delete a member and derived records after re-authentication."""
+    phone = payload.phone.strip()
+    settings = get_settings()
+    client_ip = get_client_ip(request, trusted_proxy_ips=settings.trusted_proxy_ips)
+    try:
+        enforce_rate_limit(
+            rate_limit_key("member-delete", client_ip, phone),
+            limit=settings.rate_limit_member_limit,
+            window_seconds=settings.rate_limit_member_window_seconds,
+        )
+    except RateLimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many deletion attempts. Try again later.",
+            headers={"Retry-After": str(error.retry_after)},
+        ) from error
+    except RateLimitUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Deletion service temporarily unavailable.",
+        ) from error
+
+    user = session.scalar(
+        select(User)
+        .where(User.phone == phone, User.is_active.is_(True))
+        .order_by(User.created_at.desc(), User.id.desc())
+    )
+    if user is None or not verify_access_code(payload.access_code, user.access_code_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid phone or access code.",
+        )
+
+    purge_user_data(session, user)
+    session.commit()

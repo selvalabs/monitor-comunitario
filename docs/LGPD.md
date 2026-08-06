@@ -57,3 +57,10 @@ termos de integração com WhatsApp/Evolution API
 ```
 
 Os textos adicionados são base técnica e informativa para portfólio, não substituem revisão jurídica.
+
+
+## Exclusão pelo morador
+
+A área do morador oferece exclusão permanente autenticada pelo telefone e código privado. A confirmação exige uma segunda etapa visual e o código é validado novamente no backend. A exclusão remove o cadastro e os registros derivados de alertas, matches e eventos relacionados.
+
+A retenção automática de cadastros apenas desativados permanece fora desta etapa até que o prazo operacional seja definido.
