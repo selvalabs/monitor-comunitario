@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import pytest
+from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 
 from monitor_comunitario.api.main import app
@@ -57,10 +58,10 @@ def test_admin_runs_rejects_invalid_api_key(client: TestClient) -> None:
     assert response.json()["detail"] == "Invalid or missing admin API key."
 
 
-def test_admin_runs_accepts_valid_api_key(client: TestClient) -> None:
+def test_admin_runs_accepts_valid_session(client: TestClient) -> None:
     response = client.get(
         "/admin/runs",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
     )
 
     assert response.status_code == 200

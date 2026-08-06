@@ -1,6 +1,7 @@
-﻿from collections.abc import Generator
+from collections.abc import Generator
 
 import pytest
+from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -26,8 +27,8 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Generator[TestClient, None, None]
     get_settings.cache_clear()
 
 
-def admin_headers() -> dict[str, str]:
-    return {"X-Admin-API-Key": ADMIN_API_KEY}
+def admin_headers(client: TestClient) -> dict[str, str]:
+    return admin_session_headers(client)
 
 
 def test_create_and_get_user(client: TestClient) -> None:
@@ -60,7 +61,7 @@ def test_create_and_get_user(client: TestClient) -> None:
 
     admin_get_response = client.get(
         f"/admin/users/{created['id']}",
-        headers=admin_headers(),
+        headers=admin_headers(client),
     )
 
     assert admin_get_response.status_code == 200
@@ -127,7 +128,7 @@ def test_update_user(client: TestClient) -> None:
 
     admin_update_response = client.patch(
         f"/admin/users/{user_id}",
-        headers=admin_headers(),
+        headers=admin_headers(client),
         json={"neighborhood": "Kobrasol", "street": "Rua Koesa"},
     )
 
@@ -151,7 +152,7 @@ def test_admin_can_approve_user_notifications(client: TestClient) -> None:
 
     admin_update_response = client.patch(
         f"/admin/users/{user_id}",
-        headers=admin_headers(),
+        headers=admin_headers(client),
         json={"notifications_approved": True},
     )
 
@@ -177,7 +178,7 @@ def test_deactivate_user(client: TestClient) -> None:
 
     admin_delete_response = client.delete(
         f"/admin/users/{user_id}",
-        headers=admin_headers(),
+        headers=admin_headers(client),
     )
 
     assert admin_delete_response.status_code == 200

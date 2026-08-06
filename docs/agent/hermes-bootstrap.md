@@ -188,7 +188,7 @@ GET /admin/hermes/events/{event_id}
 PATCH /admin/hermes/events/{event_id}/status
 ```
 
-These endpoints must require `X-Admin-API-Key`.
+These endpoints must require the authenticated HttpOnly admin session and CSRF token.
 
 Implemented in the backend and dashboard:
 

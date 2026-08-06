@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import pytest
+from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 
 from monitor_comunitario.api.main import app
@@ -46,7 +47,7 @@ def test_admin_hermes_events_lists_events(client: TestClient) -> None:
 
     response = client.get(
         "/admin/hermes/events",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
     )
 
     assert response.status_code == 200
@@ -61,7 +62,7 @@ def test_admin_hermes_events_lists_events(client: TestClient) -> None:
 def test_admin_hermes_event_detail_returns_404(client: TestClient) -> None:
     response = client.get(
         "/admin/hermes/events/999999",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
     )
 
     assert response.status_code == 404
@@ -93,7 +94,7 @@ def test_admin_hermes_event_status_update_persists_terminal_status(
 
     response = client.patch(
         f"/admin/hermes/events/{event.id}/status",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
         json={"status": "escalated"},
     )
 
@@ -114,7 +115,7 @@ def test_admin_hermes_event_status_update_persists_terminal_status(
 def test_admin_hermes_event_status_update_returns_404(client: TestClient) -> None:
     response = client.patch(
         "/admin/hermes/events/999999/status",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
         json={"status": "processed"},
     )
 
@@ -133,7 +134,7 @@ def test_admin_hermes_event_status_update_rejects_invalid_status(
 
     response = client.patch(
         f"/admin/hermes/events/{event.id}/status",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
         json={"status": "sent"},
     )
 

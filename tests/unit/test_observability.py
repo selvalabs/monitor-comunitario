@@ -2,6 +2,7 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 
 import pytest
+from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 
 from monitor_comunitario.api.main import app
@@ -47,7 +48,7 @@ def test_admin_diagnostics_requires_api_key(client: TestClient) -> None:
 def test_admin_diagnostics_returns_operational_metadata(client: TestClient) -> None:
     response = client.get(
         "/admin/diagnostics",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
     )
 
     assert response.status_code == 200
@@ -91,7 +92,7 @@ def test_admin_latest_run_returns_most_recent_run(client: TestClient) -> None:
 
     response = client.get(
         "/admin/runs/latest",
-        headers={"X-Admin-API-Key": "test-admin-key"},
+        headers=admin_session_headers(client),
     )
 
     assert response.status_code == 200
