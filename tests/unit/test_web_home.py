@@ -12,6 +12,8 @@ def test_home_page_returns_public_frontend() -> None:
     assert "Espaço para anúncio local" in response.text
     assert "Política de Privacidade" in response.text
     assert "accept_legal_terms" in response.text
+    assert 'id="email"' in response.text
+    assert "email-verification-panel" in response.text
     assert "consent-banner" in response.text
     assert "theme-selector" in response.text
     assert "language-selector" in response.text
@@ -39,6 +41,8 @@ def test_public_javascript_preserves_registration_and_access_code_contract() -> 
     assert response.status_code == 200
     assert 'fetch("/users"' in response.text
     assert "copyAccessCode" in response.text
+    assert "pending_email_verification" in response.text
+    assert "/users/verify-email" in response.text
     assert "accessCodePanel.focus()" in response.text
 
 

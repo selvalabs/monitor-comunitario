@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
@@ -135,6 +135,11 @@
             </label>
 
             <label>
+              E-mail para confirmação
+              <input id="email" name="email" type="email" autocomplete="email" required />
+            </label>
+
+            <label>
               Telefone ou WhatsApp
               <input
                 id="phone"
@@ -198,6 +203,19 @@
 
             <p id="form-status" class="status-message" role="status"></p>
 
+            <div id="email-verification-panel" class="access-code-panel" tabindex="-1" hidden>
+              <p class="eyebrow">Confirmação por e-mail</p>
+              <h3>Digite o código recebido por e-mail</h3>
+              <label>
+                E-mail
+                <input id="verification-email" type="email" autocomplete="email" />
+              </label>
+              <label>
+                Código de confirmação
+                <input id="verification-otp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" />
+              </label>
+              <button id="verify-email-button" class="button button-primary" type="button">Confirmar e-mail</button>
+            </div>
             <div id="access-code-panel" class="access-code-panel" tabindex="-1" hidden>
               <p class="eyebrow">Código privado</p>
               <h3>Guarde este código para acessar seus alertas</h3>

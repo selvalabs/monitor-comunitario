@@ -1,8 +1,12 @@
-﻿const form = document.querySelector("#registration-form");
+const form = document.querySelector("#registration-form");
 const formStatus = document.querySelector("#form-status");
 const accessCodePanel = document.querySelector("#access-code-panel");
 const accessCodeValue = document.querySelector("#access-code-value");
 const copyAccessCodeButton = document.querySelector("#copy-access-code");
+const emailVerificationPanel = document.querySelector("#email-verification-panel");
+const verificationEmail = document.querySelector("#verification-email");
+const verificationOtp = document.querySelector("#verification-otp");
+const verifyEmailButton = document.querySelector("#verify-email-button");
 
 const consentBanner = document.querySelector("#consent-banner");
 const consentBannerText = document.querySelector("#consent-banner-text");
@@ -54,6 +58,7 @@ function formToPayload(formElement) {
 
   return {
     name: String(data.get("name") || "").trim(),
+    email: String(data.get("email") || "").trim(),
     phone: String(data.get("phone") || "").trim(),
     municipality: String(data.get("municipality") || "").trim(),
     neighborhood: String(data.get("neighborhood") || "").trim(),
@@ -64,6 +69,18 @@ function formToPayload(formElement) {
   };
 }
 
+async function verifyEmail(email, otp) {
+  const response = await fetch("/users/verify-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, otp }),
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body.detail || "Não foi possível confirmar o e-mail.");
+  }
+  return body;
+}
 async function createUser(payload) {
   const response = await fetch("/users", {
     method: "POST",
@@ -372,8 +389,8 @@ form.addEventListener("submit", async (event) => {
 
   const payload = formToPayload(form);
 
-  if (!payload.name || !payload.phone || !payload.municipality) {
-    setStatus("Informe nome, telefone e município.", true);
+  if (!payload.name || !payload.email || !payload.phone || !payload.municipality) {
+    setStatus("Informe nome, e-mail, telefone e município.", true);
     return;
   }
 
@@ -382,6 +399,14 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const user = await createUser(payload);
+    if (user.status === "pending_email_verification") {
+      verificationEmail.value = payload.email;
+      emailVerificationPanel.hidden = false;
+      emailVerificationPanel.focus();
+      setStatus("Confira seu e-mail e informe o código recebido. Depois, confirme o telefone pelo WhatsApp.");
+      form.reset();
+      return;
+    }
     const { access_code: accessCode, ...storedUser } = user;
 
     setRecentRegistration(storedUser);
@@ -393,6 +418,25 @@ form.addEventListener("submit", async (event) => {
     form.reset();
   } catch (error) {
     setStatus(error.message, true);
+  }
+});
+
+verifyEmailButton?.addEventListener("click", async () => {
+  const email = verificationEmail.value.trim();
+  const otp = verificationOtp.value.trim();
+  if (!email || otp.length !== 6) {
+    setStatus("Informe o e-mail e o código de seis dígitos.", true);
+    return;
+  }
+  verifyEmailButton.disabled = true;
+  setStatus("Confirmando e-mail...");
+  try {
+    const result = await verifyEmail(email, otp);
+    emailVerificationPanel.hidden = true;
+    setStatus(result.message);
+  } catch (error) {
+    setStatus(error.message, true);
+    verifyEmailButton.disabled = false;
   }
 });
 
