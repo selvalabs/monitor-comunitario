@@ -2,7 +2,7 @@ tunnel: 653df94f-6194-4bbd-81b0-bd947ee29dfb
 credentials-file: /etc/cloudflared/credentials.json
 no-autoupdate: true
 ingress:
-  - hostname: email-ingress.monitorcomunitario.soberania.cloud
+  - hostname: monitor-email-ingress.soberania.cloud
     path: /internal/email/inbound
     service: http://api:8000
   - service: http_status:404

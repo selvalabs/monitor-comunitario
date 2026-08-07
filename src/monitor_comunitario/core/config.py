@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     brevo_api_key: str = ""
     brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
     email_ingress_secret: str = ""
-    email_ingress_allowed_recipients: str = "monitor@mail.monitorcomunitario.soberania.cloud"
+    email_ingress_allowed_recipients: str = "monitor@monitor-mail.soberania.cloud"
     email_ingress_max_raw_bytes: int = 10 * 1024 * 1024
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
