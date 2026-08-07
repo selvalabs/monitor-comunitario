@@ -281,6 +281,18 @@ def hermes_process(
     console.print(f"Events escalated: {summary.events_escalated}")
     console.print(f"Events failed: {summary.events_failed}")
 
+@app.command("telegram-bot")
+def telegram_bot() -> None:
+    """Run the dedicated Monitor administrative Telegram bot."""
+    import asyncio
+
+    from monitor_comunitario.notifications.telegram_bot import run_telegram_bot
+
+    settings = get_settings()
+    if not settings.monitor_telegram_enabled:
+        raise typer.BadParameter("MONITOR_TELEGRAM_ENABLED must be true.")
+    asyncio.run(run_telegram_bot(settings))
+
 
 @app.command()
 def worker() -> None:

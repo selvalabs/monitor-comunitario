@@ -89,5 +89,18 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  telegram-bot:
+    container_name: monitor-comunitario-telegram-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uv run monitor-comunitario telegram-bot
+    env_file:
+      - .env.production
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
 volumes:
   monitor_redis_data:

@@ -64,6 +64,12 @@ class Settings(BaseSettings):
     hermes_telegram_chat_id: str = ""
     hermes_telegram_api_base_url: str = "https://api.telegram.org"
 
+    monitor_telegram_enabled: bool = False
+    monitor_telegram_bot_token: str = ""
+    monitor_telegram_allowed_user_ids: str = ""
+    monitor_telegram_api_base_url: str = "https://api.telegram.org"
+    monitor_telegram_poll_timeout_seconds: int = 25
+
     ads_enabled: bool = False
     ads_provider: str = "placeholder"
     adsense_client_id: str = ""
@@ -95,6 +101,14 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production rejects placeholder admin API keys")
     if "monitor:monitor@" in database_url:
         raise ValueError("production rejects example database credentials")
+    if settings.monitor_telegram_enabled:
+        if not settings.monitor_telegram_bot_token:
+            raise ValueError("production requires the Monitor Telegram bot token")
+        if not any(
+            item.strip().isdigit()
+            for item in settings.monitor_telegram_allowed_user_ids.split(",")
+        ):
+            raise ValueError("production requires an allowlist for Monitor Telegram users")
     if not settings.redis_url.startswith(("redis://", "rediss://")):
         raise ValueError("production requires a Redis URL for rate limiting")
     if (
