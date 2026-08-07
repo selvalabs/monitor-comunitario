@@ -1,10 +1,7 @@
-import asyncio
-import contextlib
 import hmac
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -13,10 +10,6 @@ from monitor_comunitario.api.security import require_admin_api_key
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import User
 from monitor_comunitario.db.session import get_session
-from monitor_comunitario.notifications.evolution_provider import (
-    EvolutionMessage,
-    EvolutionNotificationProvider,
-)
 from monitor_comunitario.schemas.users import (
     EmailVerificationRequest,
     RegistrationPendingRead,
@@ -32,7 +25,6 @@ from monitor_comunitario.services.email_verification import (
     hash_otp,
     normalize_email,
 )
-from monitor_comunitario.services.hermes_catalog import get_template
 from monitor_comunitario.services.hermes_events import create_hermes_event
 from monitor_comunitario.services.member_access import generate_access_code, hash_access_code
 from monitor_comunitario.services.rate_limit import (
@@ -60,18 +52,6 @@ def utc_now() -> datetime:
 
 def _normalize_phone(value: str) -> str:
     return "".join(character for character in value if character.isdigit())
-
-
-def _send_whatsapp(phone: str, text: str) -> None:
-    settings = get_settings()
-    if not settings.evolution_enabled:
-        raise EmailVerificationUnavailable("Evolution provider is disabled")
-    provider = EvolutionNotificationProvider(
-        base_url=settings.evolution_base_url,
-        api_key=settings.evolution_api_key,
-        instance=settings.evolution_instance,
-    )
-    asyncio.run(provider.send_text(EvolutionMessage(phone=phone, text=text)))
 
 
 def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User, str]:
@@ -186,10 +166,9 @@ def create_user(
 @router.post("/verify-email", response_model=RegistrationPendingRead)
 def verify_email(
     payload: EmailVerificationRequest,
-    request: Request,
     session: SessionDep,
 ) -> RegistrationPendingRead:
-    """Verify email OTP and send the deterministic WhatsApp confirmation."""
+    """Verify email OTP and enqueue the deterministic WhatsApp confirmation for Hermes."""
     settings = get_settings()
     if not settings.email_verification_enabled:
         raise HTTPException(
@@ -227,70 +206,63 @@ def verify_email(
         )
     pending["email_verified"] = True
     store.save(email, pending["phone"], pending, settings.email_verification_ttl_seconds)
-    template = get_template("member_phone_confirmation_v1")
-    text = template.body.format(name=pending["name"], url=settings.member_area_url)
-    try:
-        _send_whatsapp(pending["phone"], text)
-    except (EmailVerificationUnavailable, ValueError, OSError, httpx.HTTPError) as error:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Phone verification is temporarily unavailable.",
-        ) from error
+    create_hermes_event(
+        session=session,
+        event_type="member_phone_confirmation_requested",
+        channel="whatsapp",
+        recipient_phone=pending["phone"],
+        intent="ACCESS_MEMBER_AREA",
+        template_key="member_phone_confirmation_v1",
+        payload={"name": pending["name"], "url": settings.member_area_url},
+    )
     return RegistrationPendingRead(
         status="pending_phone_verification",
         message="E-mail confirmado. Responda OK à mensagem no WhatsApp para ativar o cadastro.",
     )
 
 
-@router.post("/webhooks/evolution", include_in_schema=False)
-def evolution_webhook(
+@router.post("/internal/hermes/phone-confirmation", include_in_schema=False)
+def hermes_phone_confirmation(
     payload: dict[str, Any],
     request: Request,
     session: SessionDep,
 ) -> dict[str, str]:
-    """Consume only signed Evolution messages for pending phone confirmation."""
+    """Apply a signed phone-confirmation result received from Hermes."""
     settings = get_settings()
-    provided_secret = request.headers.get("X-Hermes-Webhook-Secret", "")
-    if not settings.evolution_webhook_secret or not hmac.compare_digest(
-        provided_secret, settings.evolution_webhook_secret
+    provided_secret = request.headers.get("X-Hermes-Callback-Secret", "")
+    if not settings.hermes_callback_secret or not hmac.compare_digest(
+        provided_secret, settings.hermes_callback_secret
     ):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Hermes callback secret.",
         )
-    data = payload.get("data", payload)
-    key = data.get("key", {}) if isinstance(data, dict) else {}
-    remote_jid = str(key.get("remoteJid", ""))
-    if key.get("fromMe") or "@s.whatsapp.net" not in remote_jid:
-        return {"status": "ignored"}
-    phone = _normalize_phone(remote_jid.split("@", 1)[0].split(":", 1)[0])
-    message = data.get("message", {}) if isinstance(data, dict) else {}
-    text = (
-        str(
-            message.get("conversation", "")
-            or message.get("extendedTextMessage", {}).get("text", "")
-        )
-        .strip()
-        .upper()
-    )
+
+    phone = _normalize_phone(str(payload.get("phone", "")))
+    reply = str(payload.get("reply", "")).strip().upper()
     store = get_pending_registration_store()
     if store is None or not phone:
         return {"status": "ignored"}
     pending = store.load_by_phone(phone)
     if pending is None or not pending.get("email_verified"):
         return {"status": "ignored"}
-    if text == "CANCELAR":
+    if reply == "CANCELAR":
         store.delete(pending["email"], phone)
         return {"status": "cancelled"}
-    if text != "OK":
+    if reply != "OK":
         return {"status": "ignored"}
+
     user, access_code = _create_verified_user(session, pending)
     store.delete(pending["email"], phone)
-    with contextlib.suppress(EmailVerificationUnavailable, ValueError, OSError, httpx.HTTPError):
-        _send_whatsapp(
-            phone,
-            f"Cadastro confirmado, {user.name}! Seu código privado é {access_code}. "
-            f"Acesse {settings.member_area_url}",
-        )
+    create_hermes_event(
+        session=session,
+        event_type="member_phone_confirmation_completed",
+        channel="whatsapp",
+        recipient_phone=phone,
+        intent="ACCESS_MEMBER_AREA",
+        template_key="member_access_code_v1",
+        payload={"name": user.name, "access_code": access_code, "url": settings.member_area_url},
+    )
     return {"status": "confirmed"}
 
 

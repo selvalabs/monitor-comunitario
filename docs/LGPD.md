@@ -53,7 +53,7 @@ segurança
 operadores/suboperadores
 provedores de ads
 provedores de analytics
-termos de integração com WhatsApp/Evolution API
+termos de integração com WhatsApp e Hermes
 ```
 
 Os textos adicionados são base técnica e informativa para portfólio, não substituem revisão jurídica.
@@ -68,4 +68,4 @@ A retenção automática de cadastros apenas desativados permanece fora desta et
 
 ## Cadastro verificado
 
-O cadastro público permanece pendente no Redis até a confirmação do e-mail e do telefone. O OTP tem expiração e limite de tentativas. Após o e-mail, o sistema envia uma mensagem WhatsApp determinística; somente `OK` ativa o cadastro, `CANCELAR` remove o pendente e a ausência de resposta expira a solicitação.
+O cadastro público permanece pendente no Redis até a confirmação do e-mail e do telefone. O OTP tem expiração e limite de tentativas. Após o e-mail, o Monitor registra um evento para o Hermes; o Hermes envia a mensagem pelo seu próprio canal WhatsApp. Somente `OK` ativa o cadastro, `CANCELAR` remove o pendente e a ausência de resposta expira a solicitação.

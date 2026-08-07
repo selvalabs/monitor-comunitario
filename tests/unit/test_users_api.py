@@ -214,21 +214,14 @@ def test_email_and_whatsapp_verification_flow(
 
     store = FakeStore()
     delivered_emails: list[tuple[str, str]] = []
-    delivered_whatsapp: list[tuple[str, str]] = []
     monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
-    monkeypatch.setenv("EVOLUTION_ENABLED", "true")
-    monkeypatch.setenv("EVOLUTION_WEBHOOK_SECRET", "webhook-secret")
+    monkeypatch.setenv("HERMES_CALLBACK_SECRET", "callback-secret")
     get_settings.cache_clear()
     monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
     monkeypatch.setattr(
         email_verification,
         "send_verification_email",
         lambda *, email, otp: delivered_emails.append((email, otp)),
-    )
-    monkeypatch.setattr(
-        routes_users,
-        "_send_whatsapp",
-        lambda phone, text: delivered_whatsapp.append((phone, text)),
     )
 
     registration = client.post(
@@ -237,7 +230,7 @@ def test_email_and_whatsapp_verification_flow(
             "name": "Email Verified",
             "email": "person@example.com",
             "phone": "5548999912345",
-            "municipality": "Florianópolis",
+            "municipality": "Florianopolis",
         },
     )
     assert registration.status_code == 202
@@ -250,22 +243,35 @@ def test_email_and_whatsapp_verification_flow(
     )
     assert verify_email.status_code == 200
     assert verify_email.json()["status"] == "pending_phone_verification"
-    assert delivered_whatsapp[0][0] == "5548999912345"
-    assert "Responda OK" in delivered_whatsapp[0][1]
 
-    webhook = client.post(
-        "/users/webhooks/evolution",
-        headers={"X-Hermes-Webhook-Secret": "webhook-secret"},
-        json={
-            "data": {
-                "key": {"remoteJid": "5548999912345@s.whatsapp.net"},
-                "message": {"conversation": "OK"},
-            }
-        },
+    with SessionLocal() as session:
+        request_event = session.scalar(
+            select(HermesEvent).where(
+                HermesEvent.event_type == "member_phone_confirmation_requested"
+            )
+        )
+    assert request_event is not None
+    assert request_event.channel == "whatsapp"
+    assert request_event.recipient_phone == "5548999912345"
+    assert request_event.template_key == "member_phone_confirmation_v1"
+
+    callback = client.post(
+        "/users/internal/hermes/phone-confirmation",
+        headers={"X-Hermes-Callback-Secret": "callback-secret"},
+        json={"phone": "5548999912345", "reply": "OK"},
     )
-    assert webhook.status_code == 200
-    assert webhook.json()["status"] == "confirmed"
-    assert len(delivered_whatsapp) == 2
+    assert callback.status_code == 200
+    assert callback.json()["status"] == "confirmed"
+
+    with SessionLocal() as session:
+        completion_event = session.scalar(
+            select(HermesEvent).where(
+                HermesEvent.event_type == "member_phone_confirmation_completed"
+            )
+        )
+    assert completion_event is not None
+    assert completion_event.template_key == "member_access_code_v1"
+    assert '"access_code"' in completion_event.payload_json
 
     access = client.post(
         "/member/access",

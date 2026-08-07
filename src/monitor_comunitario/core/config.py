@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     evolution_api_key: str = ""
     evolution_instance: str = ""
     evolution_enabled: bool = False
-    evolution_webhook_secret: str = ""
+    hermes_callback_secret: str = ""
     member_area_url: str = "https://monitorcomunitario.soberania.cloud/member"
 
     hermes_telegram_enabled: bool = False
@@ -93,8 +93,8 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production requires email verification before public registration")
     if not settings.smtp_host or not settings.email_from:
         raise ValueError("production requires SMTP settings for email verification")
-    if not settings.evolution_enabled or not settings.evolution_webhook_secret:
-        raise ValueError("production requires Evolution webhook settings for phone verification")
+    if not settings.hermes_callback_secret:
+        raise ValueError("production requires Hermes callback settings for phone verification")
 
 @lru_cache
 def get_settings() -> Settings:

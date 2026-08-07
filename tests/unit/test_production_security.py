@@ -14,8 +14,7 @@ def production_settings(**overrides: object) -> Settings:
         "email_verification_enabled": True,
         "smtp_host": "smtp.example.com",
         "email_from": "noreply@example.com",
-        "evolution_enabled": True,
-        "evolution_webhook_secret": "b" * 32,
+        "hermes_callback_secret": "b" * 32,
     }
     values.update(overrides)
     return Settings(**values)

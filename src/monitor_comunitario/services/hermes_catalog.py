@@ -35,6 +35,8 @@ HERMES_EVENT_TYPES: frozenset[str] = frozenset(
     {
         "notification_ready",
         "admin_approval_pending",
+        "member_phone_confirmation_requested",
+        "member_phone_confirmation_completed",
         "support_message_received",
         "support_response_ready",
         "admin_summary_requested",
@@ -149,6 +151,14 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
             "não é um canal oficial da Celesc. "
             "Saiba mais: {url} Responda OK para confirmar ou CANCELAR para não ativar o cadastro. "
             "Sem resposta, a solicitação expira automaticamente."
+        ),
+    ),
+    "member_access_code_v1": HermesTemplate(
+        key="member_access_code_v1",
+        intent=UserFacingIntent.ACCESS_MEMBER_AREA,
+        body=(
+            "Cadastro confirmado, {name}! Seu codigo privado e {access_code}. "
+            "Acesse {url} para entrar na area do morador."
         ),
     ),
     "human_escalation_v1": HermesTemplate(
