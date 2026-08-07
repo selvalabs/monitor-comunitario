@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_tls: bool = True
     email_from: str = ""
+    email_provider: str = "smtp"
+    brevo_api_key: str = ""
+    brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
     scraper_headless: bool = True
@@ -92,8 +95,14 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production requires a Redis URL for rate limiting")
     if not settings.email_verification_enabled:
         raise ValueError("production requires email verification before public registration")
-    if not settings.smtp_host or not settings.email_from:
+    if not settings.email_from:
+        raise ValueError("production requires a verified sender for email verification")
+    if settings.email_provider.lower() == "brevo" and not settings.brevo_api_key:
+        raise ValueError("production requires the Brevo API key for email verification")
+    if settings.email_provider.lower() == "smtp" and not settings.smtp_host:
         raise ValueError("production requires SMTP settings for email verification")
+    if settings.email_provider.lower() not in {"smtp", "brevo"}:
+        raise ValueError("production requires a supported email provider")
     if not settings.hermes_callback_secret:
         raise ValueError("production requires Hermes callback settings for phone verification")
     if not settings.hermes_event_api_secret:

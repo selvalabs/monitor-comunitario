@@ -72,19 +72,47 @@ def get_pending_registration_store() -> PendingRegistrationStore | None:
     return PendingRegistrationStore(settings.redis_url) if settings.redis_url else None
 
 
-def send_verification_email(*, email: str, otp: str) -> None:
+def send_verification_email(*, email: str, otp: str) -> str | None:
     settings = get_settings()
     message = EmailMessage()
-    message["Subject"] = "Confirme seu cadastro no Monitor Comunitário"
+    message["Subject"] = "Confirme seu cadastro no Monitor Comunitario"
     message["From"] = settings.email_from
     message["To"] = email
     message.set_content(
-        "Seu código de confirmação do Monitor Comunitário é: "
+        "Seu codigo de confirmacao do Monitor Comunitario e: "
         + otp
         + "\n\nEle expira em "
         + str(settings.email_verification_ttl_seconds // 60)
         + " minutos."
     )
+
+    if settings.email_provider.lower() == "brevo":
+        import httpx
+
+        payload = {
+            "sender": {"email": settings.email_from},
+            "to": [{"email": email}],
+            "subject": message["Subject"],
+            "textContent": message.get_content(),
+        }
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                response = client.post(
+                    settings.brevo_api_url,
+                    headers={
+                        "accept": "application/json",
+                        "api-key": settings.brevo_api_key,
+                        "content-type": "application/json",
+                    },
+                    json=payload,
+                )
+                response.raise_for_status()
+                response_payload = response.json()
+        except (OSError, httpx.HTTPError, ValueError) as error:
+            raise EmailVerificationUnavailable from error
+        message_id = response_payload.get("messageId")
+        return str(message_id) if message_id else None
+
     try:
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
             if settings.smtp_tls:
@@ -94,3 +122,4 @@ def send_verification_email(*, email: str, otp: str) -> None:
             server.send_message(message)
     except (OSError, smtplib.SMTPException) as error:
         raise EmailVerificationUnavailable from error
+    return None

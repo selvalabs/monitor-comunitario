@@ -221,7 +221,7 @@ def test_email_and_whatsapp_verification_flow(
     monkeypatch.setattr(
         email_verification,
         "send_verification_email",
-        lambda *, email, otp: delivered_emails.append((email, otp)),
+        lambda *, email, otp: (delivered_emails.append((email, otp)) or "<brevo-id@example.com>"),
     )
 
     registration = client.post(
