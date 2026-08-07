@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     evolution_instance: str = ""
     evolution_enabled: bool = False
     hermes_callback_secret: str = ""
+    hermes_event_api_secret: str = ""
     member_area_url: str = "https://monitorcomunitario.soberania.cloud/member"
 
     hermes_telegram_enabled: bool = False
@@ -95,6 +96,8 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production requires SMTP settings for email verification")
     if not settings.hermes_callback_secret:
         raise ValueError("production requires Hermes callback settings for phone verification")
+    if not settings.hermes_event_api_secret:
+        raise ValueError("production requires Hermes event API settings")
 
 @lru_cache
 def get_settings() -> Settings:

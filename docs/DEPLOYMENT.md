@@ -75,6 +75,7 @@ SMTP_PASSWORD=<smtp-password>
 SMTP_TLS=true
 EMAIL_FROM=<verified-sender-email>
 HERMES_CALLBACK_SECRET=<strong-hermes-callback-secret>
+HERMES_EVENT_API_SECRET=<strong-hermes-event-api-secret>
 MEMBER_AREA_URL=https://monitorcomunitario.soberania.cloud/member
 ```
 
@@ -90,6 +91,15 @@ X-Hermes-Callback-Secret: <strong-hermes-callback-secret>
 Only exact `OK` activates the phone and creates the member record. `CANCELAR` removes the pending registration; no response lets the Redis request expire. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved access-code message.
 
 The WhatsApp connection, credentials, inbound message handling, and delivery retries remain owned by Hermes. Configure those on the Hermes side, never in `.env.production` for Monitor Comunitario.
+
+Hermes polls the internal event contract with `X-Hermes-Event-Secret`:
+
+```text
+GET /internal/hermes/events?event_type=member_phone_confirmation_requested
+PATCH /internal/hermes/events/{id}
+```
+
+Polling atomically changes events from `created` to `queued`. Hermes acknowledges delivery with `{"status":"processed"}` or `{"status":"failed","error_message":"..."}`. The endpoint exposes only the two resident WhatsApp event types and does not grant database access.
 
 ### Admin access
 

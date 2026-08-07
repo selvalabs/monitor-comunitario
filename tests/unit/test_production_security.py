@@ -15,6 +15,7 @@ def production_settings(**overrides: object) -> Settings:
         "smtp_host": "smtp.example.com",
         "email_from": "noreply@example.com",
         "hermes_callback_secret": "b" * 32,
+        "hermes_event_api_secret": "c" * 32,
     }
     values.update(overrides)
     return Settings(**values)
