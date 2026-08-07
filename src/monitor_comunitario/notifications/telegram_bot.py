@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import asyncio
 import logging
@@ -29,6 +29,8 @@ def _chunks(lines: Iterable[str]) -> list[str]:
             current = line
         else:
             current = candidate
+    if current:
+        chunks.append(current)
     return chunks or ["Sem dados."]
 
 
