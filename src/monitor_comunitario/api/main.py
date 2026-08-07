@@ -1,4 +1,4 @@
-﻿from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from monitor_comunitario.api.routes_admin import router as admin_router
 from monitor_comunitario.api.routes_admin_session import router as admin_session_router
+from monitor_comunitario.api.routes_email_internal import router as email_internal_router
 from monitor_comunitario.api.routes_hermes import admin_router as admin_hermes_router
 from monitor_comunitario.api.routes_hermes_internal import router as hermes_internal_router
 from monitor_comunitario.api.routes_member import router as member_router
@@ -76,6 +77,7 @@ app.include_router(admin_users_router)
 app.include_router(admin_notifications_router)
 app.include_router(admin_hermes_router)
 app.include_router(hermes_internal_router)
+app.include_router(email_internal_router)
 
 
 @app.get("/health")
