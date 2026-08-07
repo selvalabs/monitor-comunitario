@@ -1,4 +1,5 @@
 const DEFAULT_MAX_RAW_BYTES = 10 * 1024 * 1024;
+const MAX_ALLOWED_RAW_BYTES = 10 * 1024 * 1024;
 
 function normalizeAddress(value) {
   return String(value || "").trim().toLowerCase();
@@ -106,7 +107,10 @@ export default {
       return;
     }
 
-    const maxBytes = Number(env.MAX_RAW_BYTES || DEFAULT_MAX_RAW_BYTES);
+    const configured = Number(env.MAX_RAW_BYTES);
+    const maxBytes = Number.isFinite(configured) && configured > 0
+      ? Math.min(Math.floor(configured), MAX_ALLOWED_RAW_BYTES)
+      : DEFAULT_MAX_RAW_BYTES;
     let raw;
     try {
       raw = await readLimitedRaw(message.raw, maxBytes);
@@ -134,6 +138,6 @@ ${rawMimeBase64}`);
   },
 
   async fetch() {
-    return new Response("email ingress worker", { status: 200 });
+    return new Response(null, { status: 404 });
   },
 };
