@@ -97,9 +97,9 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production rejects example database credentials")
     if not settings.redis_url.startswith(("redis://", "rediss://")):
         raise ValueError("production requires a Redis URL for rate limiting")
-    if not settings.email_verification_enabled:
-        raise ValueError("production requires email verification before public registration")
-    if not settings.email_from:
+    if settings.public_registration_enabled and not settings.email_verification_enabled:
+        raise ValueError("production requires email verification when public registration is enabled")
+    if settings.email_verification_enabled and not settings.email_from:
         raise ValueError("production requires a verified sender for email verification")
     if (
         settings.email_verification_enabled
