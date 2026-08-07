@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,3 +26,24 @@ class HermesEventRead(BaseModel):
     error_message: str
     created_at: datetime
     processed_at: datetime | None
+
+
+class HermesEventDeliveryRead(BaseModel):
+    """Minimal event envelope exposed to the Hermes delivery worker."""
+
+    id: int
+    status: str
+    event_type: str
+    channel: str
+    recipient_phone: str
+    intent: str
+    template_key: str
+    payload: dict[str, object]
+    created_at: datetime
+
+
+class HermesEventDeliveryUpdate(BaseModel):
+    """Terminal delivery result reported by Hermes."""
+
+    status: Literal["processed", "failed"]
+    error_message: str = ""
