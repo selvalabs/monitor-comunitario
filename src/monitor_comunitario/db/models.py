@@ -1,7 +1,17 @@
 from datetime import UTC, datetime
 from enum import StrEnum
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -163,3 +173,15 @@ class HermesEvent(Base):
         index=True,
     )
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class InboundEmail(Base):
+    __tablename__ = "inbound_emails"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    idempotency_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    recipient: Mapped[str] = mapped_column(String(320), index=True)
+    sender: Mapped[str] = mapped_column(String(320), default="")
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    raw_mime: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
