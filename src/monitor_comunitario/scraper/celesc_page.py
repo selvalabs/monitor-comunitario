@@ -83,6 +83,16 @@ def build_safe_snapshot_slug(value: str) -> str:
     return slug or "municipio"
 
 
+async def wait_for_celesc_page(page: Page, url: str, timeout_ms: int) -> None:
+    """Load the Celesc page without requiring a permanent network idle state."""
+    await page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+    with suppress(PlaywrightTimeoutError):
+        await page.wait_for_load_state(
+            "networkidle",
+            timeout=min(timeout_ms, 5_000),
+        )
+
+
 def is_placeholder_municipality_option(option: MunicipalityOption) -> bool:
     """Return whether a municipality option is only a placeholder."""
     label = option.label.strip().casefold()
@@ -227,10 +237,8 @@ async def fetch_celesc_page(
         page = await browser.new_page()
         page.set_default_timeout(timeout_ms)
 
-        await page.goto(url, wait_until="networkidle")
+        await wait_for_celesc_page(page, url, timeout_ms)
         await accept_cookie_banner(page)
-        await page.wait_for_load_state("networkidle")
-
         html = await page.content()
         raw_text = await page.locator("body").inner_text(timeout=timeout_ms)
         text = clean_page_text(raw_text)
@@ -277,9 +285,9 @@ async def fetch_celesc_municipality_pages(
         page = await browser.new_page()
         page.set_default_timeout(timeout_ms)
 
-        await page.goto(url, wait_until="networkidle")
+        await wait_for_celesc_page(page, url, timeout_ms)
         await accept_cookie_banner(page)
-        await page.wait_for_load_state("networkidle")
+
         await page.wait_for_timeout(1_000)
 
         select_result = await find_municipality_select_in_frames(page)
