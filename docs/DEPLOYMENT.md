@@ -68,12 +68,17 @@ Production registration is fail-closed and requires email OTP followed by WhatsA
 EMAIL_VERIFICATION_ENABLED=true
 EMAIL_VERIFICATION_TTL_SECONDS=900
 EMAIL_VERIFICATION_MAX_ATTEMPTS=5
+EMAIL_PROVIDER=brevo
+BREVO_API_KEY=<brevo-api-key>
+BREVO_API_URL=https://api.brevo.com/v3/smtp/email
+EMAIL_FROM=<verified-sender-email>
+
+# SMTP fallback, only when EMAIL_PROVIDER=smtp
 SMTP_HOST=<smtp-host>
 SMTP_PORT=587
 SMTP_USERNAME=<smtp-user>
 SMTP_PASSWORD=<smtp-password>
 SMTP_TLS=true
-EMAIL_FROM=<verified-sender-email>
 HERMES_CALLBACK_SECRET=<strong-hermes-callback-secret>
 HERMES_EVENT_API_SECRET=<strong-hermes-event-api-secret>
 MEMBER_AREA_URL=https://monitorcomunitario.soberania.cloud/member
@@ -90,7 +95,7 @@ X-Hermes-Callback-Secret: <strong-hermes-callback-secret>
 
 Only exact `OK` activates the phone and creates the member record. `CANCELAR` removes the pending registration; no response lets the Redis request expire. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved access-code message.
 
-The WhatsApp connection, credentials, inbound message handling, and delivery retries remain owned by Hermes. Configure those on the Hermes side, never in `.env.production` for Monitor Comunitario.
+Brevo is the outbound transactional provider for this flow. Cloudflare Email Routing is a separate inbound service and is not called by the Monitor API. The WhatsApp connection, credentials, inbound message handling, and delivery retries remain owned by Hermes. Configure those on the Hermes side, never in `.env.production` for Monitor Comunitario.
 
 Hermes polls the internal event contract with `X-Hermes-Event-Secret`:
 

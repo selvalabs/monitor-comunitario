@@ -59,7 +59,7 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
     user_data = {
         key: value
         for key, value in data.items()
-        if key not in {"email", "otp_hash", "attempts", "email_verified"}
+        if key not in {"email", "otp_hash", "attempts", "email_verified", "email_delivery_id"}
     }
     user = User(
         **user_data,
@@ -152,7 +152,10 @@ def create_user(
         store.save(email, phone, pending, settings.email_verification_ttl_seconds)
         from monitor_comunitario.services.email_verification import send_verification_email
 
-        send_verification_email(email=email, otp=otp)
+        delivery_id = send_verification_email(email=email, otp=otp)
+        if delivery_id:
+            pending["email_delivery_id"] = delivery_id
+            store.save(email, phone, pending, settings.email_verification_ttl_seconds)
     except EmailVerificationUnavailable as error:
         store.delete(email, phone)
         raise HTTPException(
