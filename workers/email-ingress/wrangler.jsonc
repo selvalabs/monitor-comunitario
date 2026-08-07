@@ -1,0 +1,13 @@
+﻿{
+  "name": "monitor-comunitario-email-ingress",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-07",
+  "workers_dev": false,
+  "vars": {
+    "EMAIL_INGRESS_URL": "https://monitorcomunitario.soberania.cloud/internal/email/inbound",
+    "ALLOWED_RECIPIENTS": "monitor@soberania.cloud",
+    "MAX_RAW_BYTES": "10485760"
+  }
+}
+
+
