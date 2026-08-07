@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     rate_limit_register_window_seconds: int = 600
     rate_limit_member_limit: int = 10
     rate_limit_member_window_seconds: int = 300
+    public_registration_enabled: bool = True
     email_verification_enabled: bool = False
     email_verification_ttl_seconds: int = 900
     email_verification_max_attempts: int = 5
@@ -36,7 +37,7 @@ class Settings(BaseSettings):
     brevo_api_key: str = ""
     brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
     email_ingress_secret: str = ""
-    email_ingress_allowed_recipients: str = "monitor@soberania.cloud"
+    email_ingress_allowed_recipients: str = "monitor@mail.monitorcomunitario.soberania.cloud"
     email_ingress_max_raw_bytes: int = 10 * 1024 * 1024
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
@@ -100,15 +101,26 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production requires email verification before public registration")
     if not settings.email_from:
         raise ValueError("production requires a verified sender for email verification")
-    if settings.email_provider.lower() == "brevo" and not settings.brevo_api_key:
+    if (
+        settings.email_verification_enabled
+        and settings.email_provider.lower() == "brevo"
+        and not settings.brevo_api_key
+    ):
         raise ValueError("production requires the Brevo API key for email verification")
-    if settings.email_provider.lower() == "smtp" and not settings.smtp_host:
+    if (
+        settings.email_verification_enabled
+        and settings.email_provider.lower() == "smtp"
+        and not settings.smtp_host
+    ):
         raise ValueError("production requires SMTP settings for email verification")
-    if settings.email_provider.lower() not in {"smtp", "brevo"}:
+    if (
+        settings.email_verification_enabled
+        and settings.email_provider.lower() not in {"smtp", "brevo"}
+    ):
         raise ValueError("production requires a supported email provider")
-    if not settings.hermes_callback_secret:
+    if settings.email_verification_enabled and not settings.hermes_callback_secret:
         raise ValueError("production requires Hermes callback settings for phone verification")
-    if not settings.hermes_event_api_secret:
+    if settings.email_verification_enabled and not settings.hermes_event_api_secret:
         raise ValueError("production requires Hermes event API settings")
 
 @lru_cache
