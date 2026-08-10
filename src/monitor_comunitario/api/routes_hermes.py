@@ -12,13 +12,16 @@ from monitor_comunitario.schemas.hermes_events import HermesEventRead, HermesEve
 admin_router = APIRouter(
     prefix="/admin/hermes",
     tags=["admin", "hermes"],
-    dependencies=[Depends(require_admin_api_key)],
 )
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-@admin_router.get("/events", response_model=list[HermesEventRead])
+@admin_router.get(
+    "/events",
+    response_model=list[HermesEventRead],
+    dependencies=[Depends(require_admin_api_key)],
+)
 def list_hermes_events(
     session: SessionDep,
     limit: int = 50,
@@ -32,7 +35,11 @@ def list_hermes_events(
     return list(session.scalars(query).all())
 
 
-@admin_router.get("/events/{event_id}", response_model=HermesEventRead)
+@admin_router.get(
+    "/events/{event_id}",
+    response_model=HermesEventRead,
+    dependencies=[Depends(require_admin_api_key)],
+)
 def get_hermes_event(
     event_id: int,
     session: SessionDep,
@@ -49,7 +56,11 @@ def get_hermes_event(
     return event
 
 
-@admin_router.patch("/events/{event_id}/status", response_model=HermesEventRead)
+@admin_router.patch(
+    "/events/{event_id}/status",
+    response_model=HermesEventRead,
+    dependencies=[Depends(require_admin_api_key)],
+)
 def update_hermes_event_status(
     event_id: int,
     update: HermesEventStatusUpdate,

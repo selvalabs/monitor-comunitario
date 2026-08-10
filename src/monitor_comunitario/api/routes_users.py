@@ -1,4 +1,5 @@
 import hmac
+import time
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
@@ -6,12 +7,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from monitor_comunitario.api.security import require_admin_api_key
+from monitor_comunitario.api.security import require_admin_api_key, require_admin_or_monitor_bot
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import User
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.users import (
     EmailVerificationRequest,
+    PendingRegistrationAdminRead,
+    PendingRegistrationResendRequest,
     RegistrationPendingRead,
     UserCreate,
     UserCreatedRead,
@@ -41,6 +44,11 @@ admin_router = APIRouter(
     tags=["admin", "users"],
     dependencies=[Depends(require_admin_api_key)],
 )
+registration_admin_router = APIRouter(
+    prefix="/admin/registrations",
+    tags=["admin", "registrations"],
+    dependencies=[Depends(require_admin_or_monitor_bot)],
+)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -59,7 +67,15 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
     user_data = {
         key: value
         for key, value in data.items()
-        if key not in {"email", "otp_hash", "attempts", "email_verified", "email_delivery_id"}
+        if key
+        not in {
+            "email",
+            "otp_hash",
+            "attempts",
+            "email_verified",
+            "email_delivery_id",
+            "email_last_sent_at",
+        }
     }
     user = User(
         **user_data,
@@ -158,9 +174,10 @@ def create_user(
         from monitor_comunitario.services.email_verification import send_verification_email
 
         delivery_id = send_verification_email(email=email, otp=otp)
+        pending["email_last_sent_at"] = time.time()
         if delivery_id:
             pending["email_delivery_id"] = delivery_id
-            store.save(email, phone, pending, settings.email_verification_ttl_seconds)
+        store.save(email, phone, pending, settings.email_verification_ttl_seconds)
     except EmailVerificationUnavailable as error:
         store.delete(email, phone)
         raise HTTPException(
@@ -227,6 +244,104 @@ def verify_email(
         status="pending_phone_verification",
         message="E-mail confirmado. Responda OK à mensagem no WhatsApp para ativar o cadastro.",
     )
+
+
+def _pending_registration_read(payload: dict[str, Any]) -> PendingRegistrationAdminRead:
+    email_verified = bool(payload.get("email_verified", False))
+    return PendingRegistrationAdminRead(
+        email=normalize_email(str(payload.get("email", ""))),
+        phone=str(payload.get("phone", "")),
+        name=str(payload.get("name", "")),
+        email_verified=email_verified,
+        email_delivery_id=str(payload.get("email_delivery_id", "")),
+        status=("pending_phone_verification" if email_verified else "pending_email_verification"),
+    )
+
+
+@registration_admin_router.get("/pending", response_model=list[PendingRegistrationAdminRead])
+def list_pending_registrations() -> list[PendingRegistrationAdminRead]:
+    """List registration state for the operator without OTP material."""
+    store = get_pending_registration_store()
+    if store is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration verification is temporarily unavailable.",
+        )
+    try:
+        return [_pending_registration_read(item) for item in store.list_pending()]
+    except EmailVerificationUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration verification is temporarily unavailable.",
+        ) from error
+
+
+@registration_admin_router.post(
+    "/pending/resend",
+    response_model=PendingRegistrationAdminRead,
+)
+def resend_pending_registration_email(
+    payload: PendingRegistrationResendRequest,
+) -> PendingRegistrationAdminRead:
+    """Resend the approved email OTP without returning the OTP to the operator."""
+    settings = get_settings()
+    store = get_pending_registration_store()
+    if store is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration verification is temporarily unavailable.",
+        )
+    email = normalize_email(payload.email)
+    try:
+        pending = store.load(email)
+    except EmailVerificationUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration verification is temporarily unavailable.",
+        ) from error
+    if pending is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pending registration not found.",
+        )
+    if pending.get("email_verified"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email is already verified for this registration.",
+        )
+
+    last_sent_at = float(pending.get("email_last_sent_at", 0))
+    retry_after = int(
+        last_sent_at + settings.email_verification_resend_cooldown_seconds - time.time()
+    )
+    if retry_after > 0:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Confirmation email resend is temporarily rate limited.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    otp = generate_otp()
+    pending["otp_hash"] = hash_otp(otp)
+    pending["attempts"] = 0
+    try:
+        from monitor_comunitario.services.email_verification import send_verification_email
+
+        delivery_id = send_verification_email(email=email, otp=otp)
+        pending["email_last_sent_at"] = time.time()
+        pending["email_delivery_id"] = delivery_id or ""
+        store.save(
+            email,
+            str(pending["phone"]),
+            pending,
+            settings.email_verification_ttl_seconds,
+        )
+    except EmailVerificationUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration verification is temporarily unavailable.",
+        ) from error
+    return _pending_registration_read(pending)
 
 
 @router.post("/internal/hermes/phone-confirmation", include_in_schema=False)

@@ -59,3 +59,45 @@ def require_admin_api_key(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="CSRF token is missing or invalid.",
             )
+
+
+def require_admin_or_monitor_bot(
+    request: Request,
+    monitor_bot_key: Annotated[str | None, Header(alias="X-Monitor-Bot-Key")] = None,
+    admin_session: Annotated[str | None, Cookie(alias=SESSION_COOKIE_NAME)] = None,
+    csrf_cookie: Annotated[str | None, Cookie(alias=CSRF_COOKIE_NAME)] = None,
+    csrf_header: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
+) -> None:
+    """Allow the protected admin session or the dedicated internal bot key."""
+    if monitor_bot_key is not None:
+        expected_key = get_settings().monitor_bot_api_key.strip()
+        if not expected_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Monitor bot API key is not configured.",
+            )
+        if not compare_digest(monitor_bot_key.strip(), expected_key):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid monitor bot API key.",
+            )
+        return
+
+    require_admin_api_key(request, admin_session, csrf_cookie, csrf_header)
+
+
+def require_monitor_bot_api_key(
+    monitor_bot_key: Annotated[str | None, Header(alias="X-Monitor-Bot-Key")] = None,
+) -> None:
+    """Require the dedicated bot credential on internal bot-only routes."""
+    expected_key = get_settings().monitor_bot_api_key.strip()
+    if not expected_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Monitor bot API key is not configured.",
+        )
+    if not monitor_bot_key or not compare_digest(monitor_bot_key.strip(), expected_key):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid monitor bot API key.",
+        )

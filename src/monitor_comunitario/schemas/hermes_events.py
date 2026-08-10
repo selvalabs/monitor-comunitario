@@ -28,6 +28,17 @@ class HermesEventRead(BaseModel):
     processed_at: datetime | None
 
 
+class HermesEventBotRead(BaseModel):
+    """Redacted registration event envelope for the Telegram bot."""
+
+    id: int
+    event_type: str
+    status: str
+    channel: str
+    created_at: datetime
+    processed_at: datetime | None
+
+
 class HermesEventDeliveryRead(BaseModel):
     """Minimal event envelope exposed to the Hermes delivery worker."""
 

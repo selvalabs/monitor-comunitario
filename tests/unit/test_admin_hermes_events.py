@@ -30,6 +30,64 @@ def test_admin_hermes_events_requires_api_key(client: TestClient) -> None:
     assert response.json()["detail"] == "Invalid or missing admin API key."
 
 
+def test_monitor_bot_receives_redacted_registration_events_only(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MONITOR_BOT_API_KEY", "dedicated-bot-key")
+    get_settings.cache_clear()
+    with SessionLocal() as session:
+        session.add_all(
+            [
+                HermesEvent(
+                    event_type="member_phone_confirmation_completed",
+                    status="processed",
+                    channel="whatsapp",
+                    template_key="member_access_code_v1",
+                    payload_json='{"access_code":"must-not-reach-bot"}',
+                ),
+                HermesEvent(
+                    event_type="notification_ready",
+                    status="created",
+                    payload_json='{"notification_id":1}',
+                ),
+            ]
+        )
+        session.commit()
+
+    response = client.get(
+        "/internal/monitor-bot/registration-events",
+        headers={"X-Monitor-Bot-Key": "dedicated-bot-key"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body
+    assert all(
+        item["event_type"]
+        in {"member_phone_confirmation_requested", "member_phone_confirmation_completed"}
+        for item in body
+    )
+    assert any(item["event_type"] == "member_phone_confirmation_completed" for item in body)
+    assert all("payload_json" not in item for item in body)
+    assert "access_code" not in response.text
+
+
+def test_monitor_bot_cannot_read_full_admin_hermes_payload(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("MONITOR_BOT_API_KEY", "dedicated-bot-key")
+    get_settings.cache_clear()
+
+    response = client.get(
+        "/admin/hermes/events",
+        headers={"X-Monitor-Bot-Key": "dedicated-bot-key"},
+    )
+
+    assert response.status_code == 401
+
+
 def test_admin_hermes_events_lists_events(client: TestClient) -> None:
     with SessionLocal() as session:
         event = HermesEvent(

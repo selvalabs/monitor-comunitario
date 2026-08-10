@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     app_timezone: str = "America/Sao_Paulo"
     database_url: str = "sqlite:///./data/monitor_comunitario.db"
     admin_api_key: str = ""
+    monitor_bot_api_key: str = ""
     redis_url: str = ""
     trusted_proxy_ips: str = ""
     rate_limit_register_limit: int = 5
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
     email_verification_enabled: bool = False
     email_verification_ttl_seconds: int = 900
     email_verification_max_attempts: int = 5
+    email_verification_resend_cooldown_seconds: int = 60
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""
@@ -63,6 +65,7 @@ class Settings(BaseSettings):
     hermes_telegram_bot_token: str = ""
     hermes_telegram_chat_id: str = ""
     hermes_telegram_api_base_url: str = "https://api.telegram.org"
+    monitor_bot_api_url: str = "http://monitor-comunitario-api:8000"
 
     monitor_telegram_enabled: bool = False
     monitor_telegram_bot_token: str = ""
@@ -109,6 +112,8 @@ def validate_runtime_settings(settings: Settings) -> None:
             for item in settings.monitor_telegram_allowed_user_ids.split(",")
         ):
             raise ValueError("production requires an allowlist for Monitor Telegram users")
+        if not settings.monitor_bot_api_key:
+            raise ValueError("production requires the Monitor bot API key")
     if not settings.redis_url.startswith(("redis://", "rediss://")):
         raise ValueError("production requires a Redis URL for rate limiting")
     if (

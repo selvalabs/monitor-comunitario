@@ -149,6 +149,18 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Fluxo administrativo validado: login `200`; mutacao sem CSRF `403`; mutacao com CSRF para ID inexistente `404`.
 - API, worker e Redis saudaveis; endpoint HTTPS de health respondeu `200`; sem erros recentes nos logs.
 - Nenhum outro servico da VPS foi reiniciado ou alterado.
+## Atualizacao 2026-08-10 - fluxo administrativo de cadastro
+
+- Escopo confirmado: o bot administrativo do Monitor apoia somente o ciclo de cadastro, confirmação de e-mail, confirmação Hermes/WhatsApp e acesso do membro.
+- O bot não cadastra moradores, não valida OTP, não responde `OK`/`CANCELAR`, não gera ou expõe código privado e não envia e-mails arbitrários.
+- Implementado no working tree: listagem protegida de pendências em `/admin/registrations/pending` e reenvio controlado em `/admin/registrations/pending/resend`.
+- O reenvio usa o provedor de e-mail configurado, registra `email_delivery_id`, aplica cooldown e nunca retorna OTP ou hash.
+- O endereço canônico de produção nos exemplos é `monitor@monitor-mail.soberania.cloud`.
+- O fluxo existente permanece: e-mail OTP -> `POST /users/verify-email` -> evento Hermes WhatsApp -> callback assinado com resposta do morador -> criação do acesso.
+- Validação local: Ruff limpo, Mypy limpo, 130 testes aprovados.
+- O serviço existente `monitor-comunitario-telegram-bot` da `main` foi preservado; o fluxo de cadastro agora usa o núcleo redigido e os endpoints privados com `X-Monitor-Bot-Key`.
+- O bot não acessa PostgreSQL diretamente para esse fluxo e não recebe payloads Hermes com código privado.
+
 ## Atualizacao 2026-08-10 - mailbox agentic
 
 - Mailbox: `monitor@monitor-mail.soberania.cloud`.

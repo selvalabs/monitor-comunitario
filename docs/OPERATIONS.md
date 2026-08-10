@@ -122,6 +122,25 @@ These routes are protected because they expose or modify resident registration d
 
 Public numeric-ID access to users is intentionally not exposed. Residents should use `/member/access` with phone + private code.
 
+### Registration verification support
+
+The public registration flow remains responsible for creating the pending
+registration, sending the email OTP, and accepting the resident's OTP. The
+protected operator surface may inspect pending state and resend the approved
+email template when delivery fails:
+
+```text
+GET  /admin/registrations/pending
+POST /admin/registrations/pending/resend
+```
+
+The resend request accepts an email address and is rate limited. Responses
+include delivery metadata and verification state, never the OTP or its hash.
+After email verification, the backend creates the Hermes WhatsApp event. The
+resident's `OK` or `CANCELAR` reply is still received through Hermes and
+processed by the signed internal callback; the operator surface cannot answer
+on the resident's behalf.
+
 ### Notification management
 
 ```text

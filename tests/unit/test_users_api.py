@@ -217,6 +217,7 @@ def test_email_and_whatsapp_verification_flow(
     monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
     monkeypatch.setenv("HERMES_CALLBACK_SECRET", "callback-secret")
     get_settings.cache_clear()
+
     monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
     monkeypatch.setattr(
         email_verification,
@@ -279,3 +280,126 @@ def test_email_and_whatsapp_verification_flow(
     )
     assert access.status_code == 401
     get_settings.cache_clear()
+
+
+def test_admin_can_list_pending_registrations_without_otp(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from monitor_comunitario.api import routes_users
+
+    class FakeStore:
+        def list_pending(self) -> list[dict[str, object]]:
+            return [
+                {
+                    "email": "pending@example.com",
+                    "phone": "5548999912345",
+                    "name": "Morador Pendente",
+                    "email_verified": False,
+                    "email_delivery_id": "<brevo-id@example.com>",
+                    "otp_hash": "must-not-leak",
+                }
+            ]
+
+    monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
+    get_settings.cache_clear()
+    monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: FakeStore())
+
+    response = client.get("/admin/registrations/pending", headers=admin_headers(client))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body[0]["email"] == "pending@example.com"
+    assert body[0]["email_delivery_id"] == "<brevo-id@example.com>"
+    assert "otp" not in body[0]
+    assert "otp_hash" not in body[0]
+
+
+def test_monitor_bot_key_can_read_pending_registrations_without_admin_session(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from monitor_comunitario.api import routes_users
+
+    class FakeStore:
+        def list_pending(self) -> list[dict[str, object]]:
+            return [
+                {
+                    "email": "bot@example.com",
+                    "phone": "5548999912345",
+                    "name": "Bot Teste",
+                    "email_verified": False,
+                }
+            ]
+
+    monkeypatch.setenv("MONITOR_BOT_API_KEY", "dedicated-bot-key")
+    monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
+    get_settings.cache_clear()
+    monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: FakeStore())
+
+    response = client.get(
+        "/admin/registrations/pending",
+        headers={"X-Monitor-Bot-Key": "dedicated-bot-key"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()[0]["email"] == "bot@example.com"
+
+
+def test_admin_can_resend_confirmation_email_with_cooldown(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from monitor_comunitario.api import routes_users
+    from monitor_comunitario.services import email_verification
+
+    class FakeStore:
+        def __init__(self) -> None:
+            self.pending: dict[str, object] = {
+                "email": "pending@example.com",
+                "phone": "5548999912345",
+                "name": "Morador Pendente",
+                "email_verified": False,
+                "otp_hash": "old-hash",
+            }
+
+        def list_pending(self) -> list[dict[str, object]]:
+            return [self.pending]
+
+        def load(self, email: str) -> dict[str, object] | None:
+            return self.pending if email == self.pending["email"] else None
+
+        def save(
+            self, email: str, phone: str, payload: dict[str, object], ttl_seconds: int
+        ) -> None:
+            self.pending = payload
+
+    store = FakeStore()
+    delivered: list[tuple[str, str]] = []
+    monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
+    monkeypatch.setenv("EMAIL_VERIFICATION_RESEND_COOLDOWN_SECONDS", "60")
+    get_settings.cache_clear()
+    monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
+    monkeypatch.setattr(
+        email_verification,
+        "send_verification_email",
+        lambda *, email, otp: (delivered.append((email, otp)) or "<new-id@example.com>"),
+    )
+
+    response = client.post(
+        "/admin/registrations/pending/resend",
+        headers=admin_headers(client),
+        json={"email": "pending@example.com"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["email_delivery_id"] == "<new-id@example.com>"
+    assert delivered and delivered[0][0] == "pending@example.com"
+    assert "otp" not in response.json()
+
+    cooldown = client.post(
+        "/admin/registrations/pending/resend",
+        headers=admin_headers(client),
+        json={"email": "pending@example.com"},
+    )
+    assert cooldown.status_code == 429
