@@ -1,16 +1,17 @@
 :root {
-  --bg: #f6f4ef;
+  color-scheme: light;
+  --bg: #f2f5f7;
   --surface: #ffffff;
-  --surface-soft: #fbfaf7;
-  --text: #1f2d2b;
-  --muted: #63706d;
-  --border: #ded8ce;
-  --accent: #235f55;
-  --accent-strong: #184940;
-  --accent-soft: #e2eee9;
-  --danger: #9f2f2f;
-  --success: #266344;
-  --warning: #8a641d;
+  --surface-soft: #e8eef1;
+  --text: #17252d;
+  --muted: #5b6b74;
+  --border: #cbd7dc;
+  --accent: #0c6674;
+  --accent-strong: #084651;
+  --accent-soft: #d9eff1;
+  --danger: #b23b45;
+  --success: #23745b;
+  --warning: #a66b17;
   --shadow: 0 18px 50px rgba(31, 45, 43, 0.12);
   --radius-lg: 28px;
   --radius-md: 18px;
@@ -18,18 +19,19 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #141d1b;
-  --surface: #20302d;
-  --surface-soft: #172522;
-  --text: #edf4f1;
-  --muted: #a8b8b3;
-  --border: #36504a;
-  --accent: #8ac7b7;
-  --accent-strong: #b5ded2;
-  --accent-soft: #1d3b35;
-  --danger: #ff9b9b;
-  --success: #97d6ad;
-  --warning: #e0be66;
+  color-scheme: dark;
+  --bg: #111b21;
+  --surface: #1d2b33;
+  --surface-soft: #17242b;
+  --text: #eff6f7;
+  --muted: #a7bbc0;
+  --border: #38505a;
+  --accent: #67c4c4;
+  --accent-strong: #a5e4dd;
+  --accent-soft: #1c4147;
+  --danger: #ff9da8;
+  --success: #74d1ac;
+  --warning: #efc66f;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
 
@@ -39,10 +41,7 @@
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top left, rgba(35, 95, 85, 0.12), transparent 30rem),
-    radial-gradient(circle at 80% 20%, rgba(217, 183, 93, 0.18), transparent 26rem),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -418,20 +417,20 @@ th {
 /* === Admin dashboard polish inline === */
 :root {
   --pixel-font: "Cascadia Mono", "Consolas", "SFMono-Regular", "Courier New", monospace;
-  --admin-bg: #f3f0e8;
-  --admin-ink: #172522;
+  --admin-bg: #eef3f5;
+  --admin-ink: #17252d;
   --admin-panel: rgba(255, 255, 255, 0.9);
-  --admin-line: rgba(31, 45, 43, 0.18);
-  --admin-grid: rgba(35, 95, 85, 0.075);
-  --admin-shadow: 8px 8px 0 rgba(31, 45, 43, 0.1);
+  --admin-line: rgba(23, 37, 45, 0.18);
+  --admin-grid: rgba(12, 102, 116, 0.075);
+  --admin-shadow: 8px 8px 0 rgba(23, 37, 45, 0.1);
 }
 
 :root[data-theme="dark"] {
-  --admin-bg: #121b19;
-  --admin-ink: #edf4f1;
+  --admin-bg: #111b21;
+  --admin-ink: #eff6f7;
   --admin-panel: rgba(28, 43, 39, 0.94);
-  --admin-line: rgba(168, 184, 179, 0.24);
-  --admin-grid: rgba(138, 199, 183, 0.08);
+  --admin-line: rgba(167, 187, 192, 0.24);
+  --admin-grid: rgba(103, 196, 196, 0.08);
   --admin-shadow: 8px 8px 0 rgba(0, 0, 0, 0.24);
 }
 
@@ -439,8 +438,6 @@ body {
   background:
     linear-gradient(var(--admin-grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--admin-grid) 1px, transparent 1px),
-    radial-gradient(circle at top left, rgba(35, 95, 85, 0.14), transparent 26rem),
-    radial-gradient(circle at 88% 12%, rgba(217, 183, 93, 0.16), transparent 24rem),
     var(--admin-bg);
   background-size:
     22px 22px,
