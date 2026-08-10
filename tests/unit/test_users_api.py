@@ -195,10 +195,12 @@ def test_email_and_whatsapp_verification_flow(
     class FakeStore:
         def __init__(self) -> None:
             self.values: dict[str, dict[str, object]] = {}
+            self.ttls: list[int] = []
 
         def save(
             self, email: str, phone: str, payload: dict[str, object], ttl_seconds: int
         ) -> None:
+            self.ttls.append(ttl_seconds)
             self.values[email] = payload
             self.values[phone] = payload
 
@@ -249,12 +251,15 @@ def test_email_and_whatsapp_verification_flow(
         request_event = session.scalar(
             select(HermesEvent).where(
                 HermesEvent.event_type == "member_phone_confirmation_requested"
-            )
+            ).order_by(HermesEvent.id.desc())
         )
     assert request_event is not None
     assert request_event.channel == "whatsapp"
     assert request_event.recipient_phone == "5548999912345"
     assert request_event.template_key == "member_phone_confirmation_v1"
+    assert request_event.payload_json is not None
+    assert '"phone_confirmation_ttl_hours":48' in request_event.payload_json
+    assert store.ttls[-1] == 172800
 
     callback = client.post(
         "/users/internal/hermes/phone-confirmation",

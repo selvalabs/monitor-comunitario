@@ -25,6 +25,14 @@ def hash_otp(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def format_expiration(seconds: int) -> str:
+    """Format a verification TTL for the resident-facing email."""
+    hours, remainder = divmod(seconds, 3600)
+    if hours and remainder == 0:
+        return f"{hours} horas"
+    return f"{max(seconds // 60, 1)} minutos"
+
+
 class EmailVerificationUnavailable(Exception):
     """Raised when pending registration storage or delivery is unavailable."""
 
@@ -98,8 +106,8 @@ def send_verification_email(*, email: str, otp: str) -> str | None:
         "Seu codigo de confirmacao do Monitor Comunitario e: "
         + otp
         + "\n\nEle expira em "
-        + str(settings.email_verification_ttl_seconds // 60)
-        + " minutos."
+        + format_expiration(settings.email_verification_ttl_seconds)
+        + "."
     )
 
     if settings.email_provider.lower() == "brevo":
