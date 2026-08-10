@@ -74,19 +74,6 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-  monitor-bot:
-    profiles: ["monitor-bot"]
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: uv run monitor-comunitario telegram-admin-bot
-    env_file:
-      - .env.docker.example
-    depends_on:
-      api:
-        condition: service_started
-    restart: unless-stopped
-
 volumes:
   monitor_postgres_data:
   monitor_redis_data:

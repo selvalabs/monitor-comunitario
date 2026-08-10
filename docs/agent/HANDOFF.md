@@ -158,8 +158,21 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - O endereço canônico de produção nos exemplos é `monitor@monitor-mail.soberania.cloud`.
 - O fluxo existente permanece: e-mail OTP -> `POST /users/verify-email` -> evento Hermes WhatsApp -> callback assinado com resposta do morador -> criação do acesso.
 - Validação local: Ruff limpo, Mypy limpo, 130 testes aprovados.
-- Ainda não há serviço/container ativo do bot Telegram administrativo; a ativação permanece separada e sem deploy automático.
-- O working tree agora contém o núcleo do bot administrativo de cadastro, cliente HTTP privado com `X-Monitor-Bot-Key` e transporte long-polling; ainda não foi criado serviço/container nem feito deploy.
+- O serviço existente `monitor-comunitario-telegram-bot` da `main` foi preservado; o fluxo de cadastro agora usa o núcleo redigido e os endpoints privados com `X-Monitor-Bot-Key`.
+- O bot não acessa PostgreSQL diretamente para esse fluxo e não recebe payloads Hermes com código privado.
+
+## Atualizacao 2026-08-10 - mailbox agentic
+
+- Mailbox: `monitor@monitor-mail.soberania.cloud`.
+- Host tecnico: `monitor-email-ingress.soberania.cloud`.
+- Worker: `monitor-comunitario-email-ingress`.
+- Gateway/container: `monitor-comunitario-api`; tunnel: `monitor-comunitario-cloudflared`.
+- Persistencia atual: tabela `inbound_emails` no PostgreSQL; ainda sem fila de mail, parser MIME ou notifier downstream.
+- Validacoes concluidas: MX, Email Routing, HMAC, allowlist, tunnel com quatro conexoes QUIC e mensagem real recebida com HTTP 202.
+- Brevo: dominio `monitor-mail.soberania.cloud` possui registros DNS publicados, mas a autenticacao geral ainda esta pendente; API key, sender e webhook ainda nao foram ativados.
+- Segredos: nenhum token ou API key registrado neste arquivo.
+- Backup/rollback: backup especifico do ultimo deploy do tunnel nao foi registrado; essa lacuna deve ser corrigida antes do proximo deploy de producao.
+- Proxima acao: autenticar o dominio no Brevo, criar o sender da mailbox e configurar a credencial por secret mount/broker; depois implementar parsing, threads, fila e eventos de entrega.
 
 ## Template para futuras atualizacoes
 

@@ -115,6 +115,11 @@ def create_user(
 ) -> UserCreatedRead | RegistrationPendingRead:
     """Create a user locally or start verified registration in production."""
     settings = get_settings()
+    if not settings.public_registration_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Public registration is disabled.",
+        )
     client_ip = get_client_ip(request, trusted_proxy_ips=settings.trusted_proxy_ips)
     try:
         enforce_rate_limit(

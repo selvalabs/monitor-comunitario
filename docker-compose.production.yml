@@ -64,9 +64,11 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:2026.7.3
     container_name: monitor-comunitario-cloudflared
-    command: tunnel --config /etc/cloudflared/config.yml run
+    user: "0:0"
+    command: tunnel --no-autoupdate run --token-file /run/secrets/monitor-tunnel-token
     volumes:
       - ./ops/cloudflared:/etc/cloudflared:ro
+      - ./tunnel-secrets/monitor-tunnel-token:/run/secrets/monitor-tunnel-token:ro
     depends_on:
       api:
         condition: service_healthy
@@ -89,18 +91,17 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-  monitor-bot:
-    profiles: ["monitor-bot"]
-    container_name: monitor-comunitario-bot
+  telegram-bot:
+    container_name: monitor-comunitario-telegram-bot
     build:
       context: .
       dockerfile: Dockerfile
-    command: uv run monitor-comunitario telegram-admin-bot
+    command: uv run monitor-comunitario telegram-bot
     env_file:
       - .env.production
     depends_on:
-      api:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
 
 volumes:

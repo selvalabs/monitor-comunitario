@@ -18,9 +18,6 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/monitor_comunitario.db"
     admin_api_key: str = ""
     monitor_bot_api_key: str = ""
-    monitor_bot_enabled: bool = False
-    monitor_bot_telegram_bot_token: str = ""
-    monitor_bot_telegram_user_ids: str = ""
     redis_url: str = ""
     trusted_proxy_ips: str = ""
     rate_limit_register_limit: int = 5
@@ -42,7 +39,7 @@ class Settings(BaseSettings):
     brevo_api_key: str = ""
     brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
     email_ingress_secret: str = ""
-    email_ingress_allowed_recipients: str = "monitor@mail.monitorcomunitario.soberania.cloud"
+    email_ingress_allowed_recipients: str = "monitor@monitor-mail.soberania.cloud"
     email_ingress_max_raw_bytes: int = 10 * 1024 * 1024
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
@@ -69,6 +66,12 @@ class Settings(BaseSettings):
     hermes_telegram_chat_id: str = ""
     hermes_telegram_api_base_url: str = "https://api.telegram.org"
     monitor_bot_api_url: str = "http://monitor-comunitario-api:8000"
+
+    monitor_telegram_enabled: bool = False
+    monitor_telegram_bot_token: str = ""
+    monitor_telegram_allowed_user_ids: str = ""
+    monitor_telegram_api_base_url: str = "https://api.telegram.org"
+    monitor_telegram_poll_timeout_seconds: int = 25
 
     ads_enabled: bool = False
     ads_provider: str = "placeholder"
@@ -101,11 +104,26 @@ def validate_runtime_settings(settings: Settings) -> None:
         raise ValueError("production rejects placeholder admin API keys")
     if "monitor:monitor@" in database_url:
         raise ValueError("production rejects example database credentials")
+    if settings.monitor_telegram_enabled:
+        if not settings.monitor_telegram_bot_token:
+            raise ValueError("production requires the Monitor Telegram bot token")
+        if not any(
+            item.strip().isdigit()
+            for item in settings.monitor_telegram_allowed_user_ids.split(",")
+        ):
+            raise ValueError("production requires an allowlist for Monitor Telegram users")
+        if not settings.monitor_bot_api_key:
+            raise ValueError("production requires the Monitor bot API key")
     if not settings.redis_url.startswith(("redis://", "rediss://")):
         raise ValueError("production requires a Redis URL for rate limiting")
-    if not settings.email_verification_enabled:
-        raise ValueError("production requires email verification before public registration")
-    if not settings.email_from:
+    if (
+        settings.public_registration_enabled
+        and not settings.email_verification_enabled
+    ):
+        raise ValueError(
+            "production requires email verification when public registration is enabled"
+        )
+    if settings.email_verification_enabled and not settings.email_from:
         raise ValueError("production requires a verified sender for email verification")
     if (
         settings.email_verification_enabled
