@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     public_registration_enabled: bool = True
     email_verification_enabled: bool = False
     email_verification_ttl_seconds: int = 900
+    phone_confirmation_ttl_seconds: int = 172800
     email_verification_max_attempts: int = 5
     email_verification_resend_cooldown_seconds: int = 60
     smtp_host: str = ""

@@ -150,6 +150,7 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
             "As informações são baseadas em avisos públicos e o Monitor Comunitário "
             "não é um canal oficial da Celesc. "
             "Saiba mais: {url} Responda OK para confirmar ou CANCELAR para não ativar o cadastro. "
+            "Voce tem {phone_confirmation_ttl_hours} horas para responder. "
             "Sem resposta, a solicitação expira automaticamente."
         ),
     ),

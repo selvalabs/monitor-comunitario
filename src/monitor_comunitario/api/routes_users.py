@@ -230,7 +230,7 @@ def verify_email(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification code."
         )
     pending["email_verified"] = True
-    store.save(email, pending["phone"], pending, settings.email_verification_ttl_seconds)
+    store.save(email, pending["phone"], pending, settings.phone_confirmation_ttl_seconds)
     create_hermes_event(
         session=session,
         event_type="member_phone_confirmation_requested",
@@ -238,7 +238,11 @@ def verify_email(
         recipient_phone=pending["phone"],
         intent="ACCESS_MEMBER_AREA",
         template_key="member_phone_confirmation_v1",
-        payload={"name": pending["name"], "url": settings.member_area_url},
+        payload={
+            "name": pending["name"],
+            "url": settings.member_area_url,
+            "phone_confirmation_ttl_hours": settings.phone_confirmation_ttl_seconds // 3600,
+        },
     )
     return RegistrationPendingRead(
         status="pending_phone_verification",
