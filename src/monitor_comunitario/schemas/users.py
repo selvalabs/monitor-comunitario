@@ -24,6 +24,19 @@ class RegistrationPendingRead(BaseModel):
     message: str
 
 
+class PendingRegistrationAdminRead(BaseModel):
+    email: str
+    phone: str
+    name: str
+    email_verified: bool
+    email_delivery_id: str = ""
+    status: str
+
+
+class PendingRegistrationResendRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=320)
+
+
 class EmailVerificationRequest(BaseModel):
     email: str = Field(min_length=5, max_length=320)
     otp: str = Field(min_length=6, max_length=6)

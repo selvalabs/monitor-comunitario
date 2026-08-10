@@ -8,6 +8,12 @@ from rich.console import Console
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import SessionLocal
+from monitor_comunitario.notifications.telegram_admin_bot import (
+    HttpRegistrationAdminApi,
+    HttpTelegramTransport,
+    RegistrationAdminBot,
+    RegistrationAdminBotRunner,
+)
 from monitor_comunitario.notifications.telegram_provider import TelegramNotificationProvider
 from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_municipality_pages,
@@ -280,6 +286,31 @@ def hermes_process(
     console.print(f"Events processed: {summary.events_processed}")
     console.print(f"Events escalated: {summary.events_escalated}")
     console.print(f"Events failed: {summary.events_failed}")
+
+
+@app.command("telegram-admin-bot")
+def telegram_admin_bot() -> None:
+    """Run the restricted Telegram registration-support bot."""
+    import asyncio
+
+    settings = get_settings()
+    if not settings.monitor_bot_enabled:
+        raise typer.BadParameter("MONITOR_BOT_ENABLED must be true to start the bot.")
+    if not settings.monitor_bot_telegram_user_ids.strip():
+        raise typer.BadParameter("MONITOR_BOT_TELEGRAM_USER_IDS is required.")
+
+    api = HttpRegistrationAdminApi(settings.monitor_bot_api_url, settings.monitor_bot_api_key)
+    transport = HttpTelegramTransport(
+        settings.monitor_bot_telegram_bot_token,
+        settings.hermes_telegram_api_base_url,
+    )
+    bot = RegistrationAdminBot(
+        api,
+        set(settings.monitor_bot_telegram_user_ids.split(",")),
+    )
+    runner = RegistrationAdminBotRunner(bot, transport)
+    console.print("[bold green]Telegram registration bot started[/bold green]")
+    asyncio.run(runner.run_forever())
 
 
 @app.command()

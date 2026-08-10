@@ -65,6 +65,22 @@ class PendingRegistrationStore:
         except redis.RedisError as error:
             raise EmailVerificationUnavailable from error
 
+    def list_pending(self) -> list[dict[str, Any]]:
+        """List pending registrations without exposing Redis key material."""
+        try:
+            values: dict[str, dict[str, Any]] = {}
+            for key in self._client.scan_iter(match="monitor:registration:*"):
+                raw_value = self._client.get(key)
+                if not raw_value:
+                    continue
+                payload = json.loads(raw_value)
+                email = normalize_email(str(payload.get("email", "")))
+                if email:
+                    values[email] = payload
+        except (redis.RedisError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise EmailVerificationUnavailable from error
+        return list(values.values())
+
 
 @lru_cache
 def get_pending_registration_store() -> PendingRegistrationStore | None:

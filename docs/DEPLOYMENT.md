@@ -71,7 +71,7 @@ EMAIL_VERIFICATION_MAX_ATTEMPTS=5
 EMAIL_PROVIDER=brevo
 BREVO_API_KEY=<brevo-api-key>
 BREVO_API_URL=https://api.brevo.com/v3/smtp/email
-EMAIL_FROM=<verified-sender-email>
+EMAIL_FROM=monitor@monitor-mail.soberania.cloud
 
 # SMTP fallback, only when EMAIL_PROVIDER=smtp
 SMTP_HOST=<smtp-host>
@@ -344,6 +344,33 @@ Before a real deployment:
 [ ] docker-ops allowlist matches the real Compose container names when using guarded VPS deploy
 [ ] snapshots volume is writable
 ```
+
+## Telegram registration bot
+
+The Telegram registration-support bot is isolated behind the `monitor-bot`
+Compose profile. It has no published port and calls only the private API
+through `X-Monitor-Bot-Key`.
+
+Required protected environment values are:
+
+```text
+MONITOR_BOT_ENABLED=true
+MONITOR_BOT_API_KEY=<dedicated-monitor-bot-api-key>
+MONITOR_BOT_TELEGRAM_BOT_TOKEN=<telegram-bot-token>
+MONITOR_BOT_TELEGRAM_USER_IDS=<comma-separated-telegram-user-ids>
+MONITOR_BOT_API_URL=http://monitor-comunitario-api:8000
+```
+
+Enable it explicitly after the API is healthy:
+
+```bash
+/opt/data/ops/docker-ops/docker-ops compose-up monitor-comunitario --profile monitor-bot
+```
+
+The bot does not receive `BREVO_API_KEY`, does not access PostgreSQL directly,
+and cannot answer a resident's WhatsApp confirmation. Do not enable the
+profile until the dedicated key and Telegram allowlist are present in the
+protected production environment.
 
 ## Out of scope
 
