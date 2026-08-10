@@ -154,7 +154,7 @@ main {
 .legal-document {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
@@ -633,7 +633,7 @@ input:focus {
   margin: 0 auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.97);
+  background: var(--surface);
   box-shadow: var(--shadow);
   padding: 1rem;
 }

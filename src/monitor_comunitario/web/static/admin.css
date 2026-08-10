@@ -142,7 +142,7 @@ a {
 .metric-card {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
@@ -263,7 +263,7 @@ code {
   margin: 1rem 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--surface-soft);
   color: var(--muted);
   font-weight: 800;
   padding: 0.85rem 1rem;
