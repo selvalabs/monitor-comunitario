@@ -21,6 +21,8 @@ def test_home_page_returns_public_frontend() -> None:
     assert 'data-language-option="fr"' in response.text
     assert 'class="registration-layout"' in response.text
     assert 'data-i18n="public.hero.title"' in response.text
+    assert 'data-ad-slot="sidebar"' in response.text
+    assert 'data-ad-slot="footer"' in response.text
 
 
 def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
@@ -51,7 +53,8 @@ def test_public_javascript_preserves_registration_and_access_code_contract() -> 
     assert "pending_email_verification" in response.text
     assert "/users/verify-email" in response.text
     assert "accessCodePanel.focus()" in response.text
-    assert "Aceitar opcionais" in response.text
+    assert 'translate("public.status.submitting")' in response.text
+    assert 'translate("public.access.unavailable")' in response.text
 
 
 def test_static_stylesheet_is_served() -> None:
@@ -96,6 +99,11 @@ def test_preferences_javascript_supports_lightweight_language_selector() -> None
     assert "zh:" in response.text
     assert "fr:" in response.text
     assert "data-i18n" in response.text
+    assert "public.hero.title" in response.text
+    assert "public.form.name" in response.text
+    assert "data-theme-option" in response.text
+    assert "data-language-option" in response.text
+    assert "window.monitorTranslations" in response.text
 
 
 def test_public_config_is_served_without_secret_values() -> None:
