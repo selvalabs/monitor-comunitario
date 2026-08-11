@@ -185,6 +185,15 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Backup/rollback: backup especifico do ultimo deploy do tunnel nao foi registrado; essa lacuna deve ser corrigida antes do proximo deploy de producao.
 - Proxima acao: autenticar o dominio no Brevo, criar o sender da mailbox e configurar a credencial por secret mount/broker; depois implementar parsing, threads, fila e eventos de entrega.
 
+## Atualizacao 2026-08-11 - mailbox no bot Telegram
+
+- Issue: #144. Branch: `feat/telegram-mailbox`.
+- Escopo: restaurar `/mailbox [PAGINA]` e `/email ID` no bot Telegram restrito.
+- O bot usa somente rotas internas autenticadas; nao le PostgreSQL diretamente.
+- A listagem retorna dez resumos por pagina. A leitura converte MIME para texto simples,
+  desativa URLs clicaveis e nunca retorna MIME bruto ou anexos.
+- Estado: implementado e validado localmente; ainda nao implantado.
+
 ## Template para futuras atualizacoes
 
 ## Atualizacao 2026-08-11 - codigo de acesso efemero
