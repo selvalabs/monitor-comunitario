@@ -9,7 +9,6 @@ def test_home_page_returns_public_frontend() -> None:
 
     assert response.status_code == 200
     assert "Monitor Comunitário Celesc" in response.text
-    assert "Espaço para anúncio local" in response.text
     assert "Política de Privacidade" in response.text
     assert "accept_legal_terms" in response.text
     assert 'id="email"' in response.text
@@ -18,6 +17,10 @@ def test_home_page_returns_public_frontend() -> None:
     assert "theme-selector" in response.text
     assert "language-selector" in response.text
     assert "/static/preferences.js" in response.text
+    assert 'data-theme-option="system"' in response.text
+    assert 'data-language-option="fr"' in response.text
+    assert 'class="registration-layout"' in response.text
+    assert 'data-i18n="public.hero.title"' in response.text
 
 
 def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
@@ -25,10 +28,10 @@ def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
         response = client.get("/")
 
     assert response.status_code == 200
-    assert 'class="path-panel path-panel-primary"' in response.text
-    assert 'class="path-panel path-panel-secondary"' in response.text
+    assert 'class="public-hero"' in response.text
+    assert 'class="service-steps"' in response.text
+    assert 'class="registration-layout"' in response.text
     assert "Cadastre seu endereço" in response.text
-    assert "Entre com seu telefone e código de acesso" in response.text
     assert "Saiba sobre desligamentos programados perto de você." in response.text
     assert "Confirme seu e-mail" in response.text
     assert "cruzamento com bairro e rua" not in response.text
