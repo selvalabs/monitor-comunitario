@@ -107,6 +107,14 @@ PATCH /internal/hermes/events/{id}
 
 Polling atomically changes events from `created` to `queued`. Hermes acknowledges delivery with `{"status":"processed"}` or `{"status":"failed","error_message":"..."}`. The endpoint exposes only the two resident WhatsApp event types and does not grant database access.
 
+For `member_phone_confirmation_completed`, the event payload contains a `delivery_ref`, never an access code. Before rendering `member_access_code_v1`, Hermes must request the ephemeral code with the same event secret:
+
+```text
+GET /internal/hermes/events/{id}/access-code
+```
+
+This endpoint accepts only the queued completion event and returns the code from Redis. Hermes must fetch it only immediately before delivery. A successful `processed` acknowledgment removes the Redis value; a `failed` acknowledgment leaves it available for retry until the 48-hour TTL expires. Deploy the Monitor API and this Hermes contract update together.
+
 ### Admin access
 
 All `/admin/*` endpoints require:

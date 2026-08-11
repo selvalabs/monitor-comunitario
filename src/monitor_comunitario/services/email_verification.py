@@ -73,6 +73,34 @@ class PendingRegistrationStore:
         except redis.RedisError as error:
             raise EmailVerificationUnavailable from error
 
+    def _delivery_access_code_key(self, reference: str) -> str:
+        digest = hashlib.sha256(reference.encode("utf-8")).hexdigest()
+        return f"monitor:delivery-access-code:{digest}"
+
+    def save_delivery_access_code(
+        self, user_id: int, access_code: str, ttl_seconds: int
+    ) -> str:
+        """Store a delivery-only access code outside the durable event log."""
+        reference = secrets.token_urlsafe(24)
+        try:
+            self._client.setex(self._delivery_access_code_key(reference), ttl_seconds, access_code)
+        except redis.RedisError as error:
+            raise EmailVerificationUnavailable from error
+        return reference
+
+    def load_delivery_access_code(self, reference: str) -> str | None:
+        try:
+            value = self._client.get(self._delivery_access_code_key(reference))
+        except redis.RedisError as error:
+            raise EmailVerificationUnavailable from error
+        return value.decode("utf-8") if isinstance(value, bytes) else value
+
+    def delete_delivery_access_code(self, reference: str) -> None:
+        try:
+            self._client.delete(self._delivery_access_code_key(reference))
+        except redis.RedisError as error:
+            raise EmailVerificationUnavailable from error
+
     def list_pending(self) -> list[dict[str, Any]]:
         """List pending registrations without exposing Redis key material."""
         try:

@@ -108,3 +108,58 @@ def test_failed_hermes_event_is_available_for_retry(client: TestClient) -> None:
     claimed_events = response.json()
     claimed = next(item for item in claimed_events if item["id"] == event_id)
     assert claimed["status"] == "queued"
+
+
+def test_hermes_can_read_ephemeral_access_code_only_for_queued_delivery(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from monitor_comunitario.api import routes_hermes_internal
+
+    class FakeStore:
+        deleted_references: list[str] = []
+
+        def load_delivery_access_code(self, reference: str) -> str | None:
+            return "ABCDE-12345" if reference == "delivery-ref" else None
+
+        def delete_delivery_access_code(self, reference: str) -> None:
+            self.deleted_references.append(reference)
+
+    store = FakeStore()
+    monkeypatch.setattr(
+        routes_hermes_internal,
+        "get_pending_registration_store",
+        lambda: store,
+        raising=False,
+    )
+    with SessionLocal() as session:
+        event = HermesEvent(
+            event_type="member_phone_confirmation_completed",
+            channel="whatsapp",
+            recipient_phone="5548999912345",
+            intent="ACCESS_MEMBER_AREA",
+            template_key="member_access_code_v1",
+            payload_json='{"delivery_ref":"delivery-ref","user_id":1}',
+            status=HermesEventStatus.QUEUED.value,
+        )
+        session.add(event)
+        session.commit()
+        session.refresh(event)
+        event_id = event.id
+
+    response = client.get(
+        f"/internal/hermes/events/{event_id}/access-code",
+        headers={"X-Hermes-Event-Secret": "event-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"access_code": "ABCDE-12345"}
+
+    acknowledged = client.patch(
+        f"/internal/hermes/events/{event_id}",
+        headers={"X-Hermes-Event-Secret": "event-secret"},
+        json={"status": "processed"},
+    )
+
+    assert acknowledged.status_code == 200
+    assert store.deleted_references == ["delivery-ref"]
