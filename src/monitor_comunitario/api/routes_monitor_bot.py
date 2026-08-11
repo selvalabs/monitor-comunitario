@@ -102,9 +102,10 @@ def _email_text_part(email: InboundEmail) -> tuple[str, int]:
 
 def _email_summary(email: InboundEmail) -> InboundEmailSummaryRead:
     message = BytesParser(policy=policy.default).parsebytes(email.raw_mime)
+    sender = _normalize_text(str(message.get("From", ""))) or _normalize_text(email.sender)
     return InboundEmailSummaryRead(
         id=email.id,
-        sender=_normalize_text(email.sender),
+        sender=sender,
         recipient=_normalize_text(email.recipient),
         subject=_normalize_text(str(message.get("subject", ""))),
         received_at=email.received_at,

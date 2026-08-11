@@ -29,7 +29,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Generator[TestClient, None, None]
 def _create_email() -> int:
     raw_mime = b"\r\n".join(
         [
-            b"From: Morador <morador@example.com>",
+            b"From: Jarbas <jarbas@example.com>",
             b"To: monitor@monitor-mail.soberania.cloud",
             b"Subject: Duvida sobre aviso",
             b"MIME-Version: 1.0",
@@ -41,7 +41,7 @@ def _create_email() -> int:
     with SessionLocal() as session:
         email = InboundEmail(
             idempotency_key=uuid4().hex + uuid4().hex,
-            sender="morador@example.com",
+            sender="bounces-490616134-3512083692@mail.agents.soberania.cloud",
             recipient="monitor@monitor-mail.soberania.cloud",
             received_at=datetime(2026, 8, 11, 15, tzinfo=UTC),
             raw_mime=raw_mime,
@@ -69,6 +69,7 @@ def test_monitor_bot_mailbox_is_paginated_and_never_exposes_raw_mime(
     assert body["page_size"] == 10
     assert body["emails"][0]["id"] == email_id
     assert body["emails"][0]["subject"] == "Duvida sobre aviso"
+    assert body["emails"][0]["sender"] == "Jarbas <jarbas@example.com>"
     assert "raw_mime" not in response.text
     assert "idempotency_key" not in response.text
 
@@ -85,6 +86,7 @@ def test_monitor_bot_reads_sanitized_email_text_by_id(client: TestClient) -> Non
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == email_id
+    assert body["sender"] == "Jarbas <jarbas@example.com>"
     assert body["body_text"] == "Ola Monitor. hxxps://example.com/aviso"
     assert "<strong>" not in response.text
     assert "https://" not in response.text
