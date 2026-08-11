@@ -6,6 +6,10 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 
 ## Estado atual
 
+- Issue `#136`: CI e CodeQL do Worker de ingress de e-mail em atualização.
+- Escopo: executar `npm test` em `workers/email-ingress` na CI e analisar
+  JavaScript/TypeScript no CodeQL; sem alteração do Worker, Cloudflare ou produção.
+
 - Revisão editorial em andamento na issue `#130` na branch `feat/product-copy`.
 - Escopo: copy em português da home, cadastro, consentimento, e-mail/WhatsApp de confirmação,
   área do morador, admin e páginas legais; sem mudança de rotas, dados, autenticação ou entrega.

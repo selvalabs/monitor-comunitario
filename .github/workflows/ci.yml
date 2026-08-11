@@ -41,3 +41,21 @@ jobs:
         run: |
           uv export --format requirements-txt --no-dev --no-emit-project > requirements-audit.txt
           uvx --isolated pip-audit --strict -r requirements-audit.txt
+
+  email-ingress-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/email-ingress
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Test email ingress Worker
+        run: npm test
