@@ -38,6 +38,21 @@ class HermesEventSummary:
     recipient_phone: str
 
 
+@dataclass(frozen=True)
+class InboundEmailSummary:
+    email_id: int
+    sender: str
+    recipient: str
+    subject: str
+    received_at: str
+
+
+@dataclass(frozen=True)
+class InboundEmailDetail(InboundEmailSummary):
+    body_text: str
+    attachment_count: int
+
+
 class RegistrationAdminApi(Protocol):
     async def list_pending(self) -> list[PendingRegistration]:
         """Return redacted pending registration state."""
@@ -47,6 +62,12 @@ class RegistrationAdminApi(Protocol):
 
     async def resend_confirmation(self, email: str) -> PendingRegistration:
         """Request one approved OTP resend."""
+
+    async def list_mailbox(self, page: int) -> list[InboundEmailSummary]:
+        """Return one safe page of inbound email metadata."""
+
+    async def get_email(self, email_id: int) -> InboundEmailDetail | None:
+        """Return one sanitized inbound email, if it exists."""
 
 
 class TelegramTransport(Protocol):
@@ -107,6 +128,45 @@ class HttpRegistrationAdminApi:
         if not isinstance(payload, dict):
             raise ValueError("Invalid resend response.")
         return PendingRegistration(**payload)
+
+    async def list_mailbox(self, page: int) -> list[InboundEmailSummary]:
+        payload = await self._request(
+            "GET",
+            "/internal/monitor-bot/mailbox",
+            params={"page": page},
+        )
+        if not isinstance(payload, dict) or not isinstance(payload.get("emails"), list):
+            raise ValueError("Invalid mailbox response.")
+        return [
+            InboundEmailSummary(
+                email_id=int(item["id"]),
+                sender=str(item["sender"]),
+                recipient=str(item["recipient"]),
+                subject=str(item["subject"]),
+                received_at=str(item["received_at"]),
+            )
+            for item in payload["emails"]
+            if isinstance(item, dict)
+        ]
+
+    async def get_email(self, email_id: int) -> InboundEmailDetail | None:
+        try:
+            payload = await self._request("GET", f"/internal/monitor-bot/mailbox/{email_id}")
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 404:
+                return None
+            raise
+        if not isinstance(payload, dict):
+            raise ValueError("Invalid mailbox email response.")
+        return InboundEmailDetail(
+            email_id=int(payload["id"]),
+            sender=str(payload["sender"]),
+            recipient=str(payload["recipient"]),
+            subject=str(payload["subject"]),
+            received_at=str(payload["received_at"]),
+            body_text=str(payload["body_text"]),
+            attachment_count=int(payload["attachment_count"]),
+        )
 
 
 class HttpTelegramTransport:
@@ -235,6 +295,10 @@ class RegistrationAdminBot:
             return await self._pending_text()
         if command == "/email-status":
             return await self._email_status(argument)
+        if command == "/mailbox":
+            return await self._mailbox_text(argument)
+        if command == "/email":
+            return await self._mailbox_email_text(argument)
         if command == "/resend-confirmation":
             return self._request_resend(update, argument)
         if command == "/confirm":
@@ -251,6 +315,8 @@ class RegistrationAdminBot:
             "/status\n"
             "/pending\n"
             "/email-status EMAIL\n"
+            "/mailbox [PAGINA] - lista 10 e-mails recebidos\n"
+            "/email ID - le um e-mail listado\n"
             "/resend-confirmation EMAIL\n"
             "/confirm NONCE\n"
             "/cancel NONCE\n"
@@ -281,6 +347,41 @@ class RegistrationAdminBot:
                 f"Cadastro: {item.email}\n"
                 f"Status: {item.status}\n"
                 f"Entrega: {delivery}"
+            )
+        )
+
+    async def _mailbox_text(self, argument: str) -> TelegramMessage:
+        page = 1
+        if argument:
+            if not argument.isdigit() or int(argument) < 1:
+                return TelegramMessage(text="Uso: /mailbox [PAGINA]")
+            page = int(argument)
+        emails = await self.api.list_mailbox(page)
+        if not emails:
+            return TelegramMessage(text=f"Mailbox - pagina {page}\nNenhum e-mail recebido.")
+        lines = [f"Mailbox - pagina {page}:"]
+        for email in emails:
+            lines.append(
+                f"#{email.email_id} | {email.sender} | {email.subject} | {email.received_at}"
+            )
+        lines.append("Use /email ID para ler.")
+        return TelegramMessage(text="\n".join(lines))
+
+    async def _mailbox_email_text(self, argument: str) -> TelegramMessage:
+        if not argument.isdigit() or int(argument) < 1:
+            return TelegramMessage(text="Uso: /email ID")
+        email = await self.api.get_email(int(argument))
+        if email is None:
+            return TelegramMessage(text="E-mail nao encontrado.")
+        return TelegramMessage(
+            text=(
+                f"E-mail #{email.email_id}\n"
+                f"De: {email.sender}\n"
+                f"Para: {email.recipient}\n"
+                f"Assunto: {email.subject}\n"
+                f"Recebido: {email.received_at}\n"
+                f"Anexos: {email.attachment_count}\n\n"
+                f"Conteudo:\n{email.body_text or '(sem corpo textual)'}"
             )
         )
 

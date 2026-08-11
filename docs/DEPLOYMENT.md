@@ -369,8 +369,8 @@ Before a real deployment:
 ## Telegram registration bot
 
 The existing `monitor-comunitario-telegram-bot` service runs the restricted
-registration-support bot. It has no published port and calls only the private
-API through `X-Monitor-Bot-Key`.
+registration and mailbox-support bot. It has no published port and calls only
+the private API through `X-Monitor-Bot-Key`.
 
 Required protected environment values are:
 
@@ -389,9 +389,11 @@ Enable it explicitly after the API is healthy:
 ```
 
 The bot does not receive `BREVO_API_KEY`, does not access PostgreSQL directly,
-and cannot answer a resident's WhatsApp confirmation. Do not enable the
-profile until the dedicated key and Telegram allowlist are present in the
-protected production environment.
+and cannot answer a resident's WhatsApp confirmation. Its mailbox commands are
+`/mailbox [PAGINA]` for ten redacted message summaries and `/email ID` for one
+sanitized plain-text body. They never expose raw MIME, attachments or ingress
+credentials. Do not enable the profile until the dedicated key and Telegram
+allowlist are present in the protected production environment.
 
 ## Out of scope
 
