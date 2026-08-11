@@ -13,6 +13,10 @@ from monitor_comunitario.schemas.hermes_events import (
     HermesEventDeliveryRead,
     HermesEventDeliveryUpdate,
 )
+from monitor_comunitario.services.email_verification import (
+    EmailVerificationUnavailable,
+    get_pending_registration_store,
+)
 
 router = APIRouter(prefix="/internal/hermes", tags=["internal", "hermes"])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -61,6 +65,15 @@ def _to_delivery_event(event: HermesEvent) -> HermesEventDeliveryRead:
     )
 
 
+def _delivery_reference(event: HermesEvent) -> str | None:
+    try:
+        payload = json.loads(event.payload_json)
+    except json.JSONDecodeError:
+        return None
+    reference = payload.get("delivery_ref") if isinstance(payload, dict) else None
+    return reference if isinstance(reference, str) and reference else None
+
+
 @router.get(
     "/events",
     response_model=list[HermesEventDeliveryRead],
@@ -95,6 +108,39 @@ def claim_hermes_events(
     return [_to_delivery_event(event) for event in events]
 
 
+@router.get(
+    "/events/{event_id}/access-code",
+    dependencies=[Depends(require_hermes_event_secret)],
+)
+def get_delivery_access_code(event_id: int, session: SessionDep) -> dict[str, str]:
+    """Return an ephemeral member code only to the Hermes delivery worker."""
+    event = session.get(HermesEvent, event_id)
+    if (
+        event is None
+        or event.event_type != "member_phone_confirmation_completed"
+        or event.status != HermesEventStatus.QUEUED.value
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Delivery not found.")
+    reference = _delivery_reference(event)
+    store = get_pending_registration_store()
+    if reference is None or store is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Delivery code not found."
+        )
+    try:
+        access_code = store.load_delivery_access_code(reference)
+    except EmailVerificationUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Delivery code is temporarily unavailable.",
+        ) from error
+    if not access_code:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Delivery code not found."
+        )
+    return {"access_code": access_code}
+
+
 @router.patch(
     "/events/{event_id}",
     response_model=HermesEventDeliveryRead,
@@ -119,6 +165,22 @@ def acknowledge_hermes_event(
             status_code=status.HTTP_409_CONFLICT,
             detail="Hermes event is not available for acknowledgement.",
         )
+    if update.status == HermesEventStatus.PROCESSED.value:
+        reference = _delivery_reference(event)
+        if reference:
+            store = get_pending_registration_store()
+            if store is None:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Delivery code is temporarily unavailable.",
+                )
+            try:
+                store.delete_delivery_access_code(reference)
+            except EmailVerificationUnavailable as error:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Delivery code is temporarily unavailable.",
+                ) from error
     event.status = update.status
     event.error_message = update.error_message[:2000]
     event.processed_at = utc_now() if update.status == HermesEventStatus.PROCESSED.value else None
@@ -126,4 +188,3 @@ def acknowledge_hermes_event(
     session.commit()
     session.refresh(event)
     return _to_delivery_event(event)
-

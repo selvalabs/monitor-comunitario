@@ -183,6 +183,15 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 
 ## Template para futuras atualizacoes
 
+## Atualizacao 2026-08-11 - codigo de acesso efemero
+
+- Issue: #132. O evento `member_phone_confirmation_completed` nao persiste mais `access_code` no PostgreSQL.
+- O codigo fica no Redis por ate 48 horas, associado a uma referencia opaca no evento; o evento agora tambem inclui `user_id` para exclusao deterministica.
+- Hermes deve buscar o codigo com o segredo de eventos em `GET /internal/hermes/events/{id}/access-code` imediatamente antes do envio e reconhecer `processed` para remover o valor efemero.
+- A migration `20260811_0006` remove codigos de acesso de eventos historicos sem tentar restaura-los no downgrade.
+- Validacao local: Ruff, Mypy e 140 testes aprovados.
+- Antes de deploy: atualizar o consumidor no container `hermes-monitor-comunitario` para o contrato documentado; nao publicar somente a API.
+
 ```text
 Data:
 Agente:

@@ -380,6 +380,17 @@ def hermes_phone_confirmation(
         return {"status": "ignored"}
 
     user, access_code = _create_verified_user(session, pending)
+    try:
+        delivery_ref = store.save_delivery_access_code(
+            user.id,
+            access_code,
+            settings.phone_confirmation_ttl_seconds,
+        )
+    except EmailVerificationUnavailable as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Registration delivery is temporarily unavailable.",
+        ) from error
     store.delete(pending["email"], phone)
     create_hermes_event(
         session=session,
@@ -388,7 +399,12 @@ def hermes_phone_confirmation(
         recipient_phone=phone,
         intent="ACCESS_MEMBER_AREA",
         template_key="member_access_code_v1",
-        payload={"name": user.name, "access_code": access_code, "url": settings.member_area_url},
+        payload={
+            "user_id": user.id,
+            "name": user.name,
+            "delivery_ref": delivery_ref,
+            "url": settings.member_area_url,
+        },
     )
     return {"status": "confirmed"}
 

@@ -214,6 +214,14 @@ def test_email_and_whatsapp_verification_flow(
             self.values.pop(email, None)
             self.values.pop(phone, None)
 
+        def save_delivery_access_code(
+            self, user_id: int, access_code: str, ttl_seconds: int
+        ) -> str:
+            self.ttls.append(ttl_seconds)
+            reference = f"delivery-{user_id}"
+            self.values[reference] = {"access_code": access_code}
+            return reference
+
     store = FakeStore()
     delivered_emails: list[tuple[str, str]] = []
     monkeypatch.setenv("EMAIL_VERIFICATION_ENABLED", "true")
@@ -273,11 +281,14 @@ def test_email_and_whatsapp_verification_flow(
         completion_event = session.scalar(
             select(HermesEvent).where(
                 HermesEvent.event_type == "member_phone_confirmation_completed"
-            )
+            ).order_by(HermesEvent.id.desc())
         )
     assert completion_event is not None
     assert completion_event.template_key == "member_access_code_v1"
-    assert '"access_code"' in completion_event.payload_json
+    assert '"access_code"' not in completion_event.payload_json
+    assert '"user_id"' in completion_event.payload_json
+    assert '"delivery_ref"' in completion_event.payload_json
+    assert store.ttls[-1] == 172800
 
     access = client.post(
         "/member/access",
