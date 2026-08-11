@@ -217,7 +217,7 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Preferencias mantem os mesmos valores em local storage. Tema usa botoes claro/sistema/escuro; idioma usa os cinco atalhos visuais solicitados.
 - O conteudo publico, formulario, consentimento e espacos de marketing possuem traducoes proprias em portugues, ingles, espanhol, frances e chines simplificado. Mensagens dinamicas usam a mesma camada de traducoes.
 - Espacos de marketing foram preservados como um slot lateral/discreto e uma faixa horizontal apos o conteudo, sem competir com o cadastro no topo.
-- Pendente: executar validacao atual em desktop e mobile antes de promover a PR.
+- Validacao atual: Ruff e Mypy limpos; 151 testes aprovados; JavaScript verificado com `node --check`; capturas locais revisadas em desktop e mobile, incluindo tema escuro e ingles sem overflow.
 
 ## Template para futuras atualizacoes
 
