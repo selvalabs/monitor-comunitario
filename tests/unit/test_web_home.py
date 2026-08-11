@@ -65,6 +65,16 @@ def test_static_stylesheet_is_served() -> None:
     assert "--accent" in response.text
 
 
+def test_public_pages_and_assets_require_cache_revalidation() -> None:
+    with TestClient(app) as client:
+        home = client.get("/")
+        stylesheet = client.get("/static/styles.css")
+
+    expected_cache_control = "no-cache, max-age=0, must-revalidate"
+    assert home.headers["cache-control"] == expected_cache_control
+    assert stylesheet.headers["cache-control"] == expected_cache_control
+
+
 def test_mobile_header_keeps_navigation_actions_compact() -> None:
     with TestClient(app) as client:
         response = client.get("/static/styles.css")
