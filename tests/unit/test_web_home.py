@@ -106,6 +106,7 @@ def test_privacy_policy_page_is_served() -> None:
 
     assert response.status_code == 200
     assert "Política de Privacidade" in response.text
+    assert "Usamos apenas os dados necessários" in response.text
     assert "LGPD" in response.text
 
 
@@ -123,4 +124,5 @@ def test_cookie_policy_page_is_served() -> None:
 
     assert response.status_code == 200
     assert "Armazenamento Local" in response.text
+    assert "Cookies necessários" in response.text
     assert "ADS_ENABLED" in response.text
