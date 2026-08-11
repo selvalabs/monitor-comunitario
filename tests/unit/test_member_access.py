@@ -174,8 +174,8 @@ def test_member_page_and_static_assets_are_served() -> None:
         style_response = test_client.get("/static/member.css")
 
     assert page_response.status_code == 200
-    assert "Área do morador" in page_response.text
-    assert "Telefone + código" in page_response.text
+    assert "Seus avisos" in page_response.text
+    assert "Entrar" in page_response.text
     assert "theme-selector" in page_response.text
     assert "confirm-delete-member" in page_response.text
     assert "language-selector" in page_response.text
@@ -198,7 +198,8 @@ def test_member_javascript_renders_alert_summary_with_original_details() -> None
     assert "/member/access" in response.text
     assert "buildNotificationSummary" in response.text
     assert "notification-summary" in response.text
-    assert "Texto original da Celesc" in response.text
+    assert "Ver aviso original da Celesc" in response.text
+    assert "Não encontramos avisos para seu endereço." in response.text
     assert 'document.createElement("details")' in response.text
 
 
