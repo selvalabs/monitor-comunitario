@@ -37,6 +37,14 @@ def _chunks(text: str | Iterable[str]) -> list[str]:
     return chunks or ["Sem dados."]
 
 
+def log_telegram_bot_failure(error: Exception) -> None:
+    """Record a safe retry signal without serializing HTTP request details."""
+    logger.warning(
+        "Monitor Telegram bot loop failed; retrying. error_type=%s",
+        type(error).__name__,
+    )
+
+
 class MonitorTelegramBot:
     """Telegram transport for the restricted registration admin controller."""
 
@@ -130,6 +138,6 @@ async def run_telegram_bot(settings: Settings) -> None:
                 await MonitorTelegramBot(settings, client).run()
         except asyncio.CancelledError:
             raise
-        except Exception:
-            logger.exception("Monitor Telegram bot loop failed; retrying.")
+        except Exception as error:
+            log_telegram_bot_failure(error)
             await asyncio.sleep(5)
