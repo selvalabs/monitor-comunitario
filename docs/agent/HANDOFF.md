@@ -202,8 +202,6 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - O envelope armazenado permanece inalterado para fins tecnicos; nao e exibido
   pelo bot Telegram.
 
-## Template para futuras atualizacoes
-
 ## Atualizacao 2026-08-11 - codigo de acesso efemero
 
 - Issue: #132. O evento `member_phone_confirmation_completed` nao persiste mais `access_code` no PostgreSQL.
@@ -212,6 +210,16 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - A migration `20260811_0006` remove codigos de acesso de eventos historicos sem tentar restaura-los no downgrade.
 - Validacao local: Ruff, Mypy e 140 testes aprovados.
 - Antes de deploy: atualizar o consumidor no container `hermes-monitor-comunitario` para o contrato documentado; nao publicar somente a API.
+## Atualizacao 2026-08-11 - frontend publico
+
+- Issue: #151. Branch: `fix/mobile-header-navigation`.
+- A pagina publica foi reorganizada com abertura curta, faixa de etapas, formulario prioritario e controles compactos de tema e idioma.
+- Preferencias mantem os mesmos valores em local storage. Tema usa botoes claro/sistema/escuro; idioma usa os cinco atalhos visuais solicitados.
+- O conteudo publico, formulario, consentimento e espacos de marketing possuem traducoes proprias em portugues, ingles, espanhol, frances e chines simplificado. Mensagens dinamicas usam a mesma camada de traducoes.
+- Espacos de marketing foram preservados como um slot lateral/discreto e uma faixa horizontal apos o conteudo, sem competir com o cadastro no topo.
+- Pendente: executar validacao atual em desktop e mobile antes de promover a PR.
+
+## Template para futuras atualizacoes
 
 ```text
 Data:
