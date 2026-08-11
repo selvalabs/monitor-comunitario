@@ -59,6 +59,15 @@ def test_static_stylesheet_is_served() -> None:
     assert "--accent" in response.text
 
 
+def test_mobile_header_keeps_navigation_actions_compact() -> None:
+    with TestClient(app) as client:
+        response = client.get("/static/styles.css")
+
+    assert response.status_code == 200
+    mobile_styles = response.text.split("@media (max-width: 560px)", maxsplit=1)[1]
+    assert ".nav-actions {\n    align-items: center;\n    flex-direction: row;" in mobile_styles
+
+
 def test_preferences_javascript_supports_global_theme_selector() -> None:
     with TestClient(app) as client:
         response = client.get("/static/preferences.js")
