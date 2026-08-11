@@ -3,211 +3,55 @@ const languageStorageKey = "monitor-comunitario:language";
 const themeSelector = document.querySelector("#theme-selector");
 const languageSelector = document.querySelector("#language-selector");
 const systemDarkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-const supportedLanguages = ["pt", "en", "es", "zh", "fr"];
+const supportedLanguages = ["pt", "en", "es", "fr", "zh"];
 
-const languageDictionaries = {
-  pt: {
-    "common.theme": "Tema",
-    "common.theme.system": "Sistema",
-    "common.theme.light": "Claro",
-    "common.theme.dark": "Escuro",
-    "common.language": "Idioma",
-    "common.language.pt": "Português",
-    "common.language.en": "English",
-    "common.language.es": "Español",
-    "common.language.zh": "简体中文",
-    "common.language.fr": "Français",
-    "nav.register": "Cadastrar endereço",
-    "nav.member": "Área do morador",
-    "nav.public": "Cadastro público",
-    "nav.public_site": "Site público",
-    "button.register_now": "Cadastrar agora",
-    "button.member_area": "Acessar área do morador",
-    "button.save_session": "Salvar nesta sessão",
-    "button.clear_key": "Limpar chave",
-    "button.refresh_dashboard": "Atualizar painel",
-    "button.run_monitoring": "Rodar coleta manual",
-    "button.access_panel": "Acessar painel",
-    "button.clear_session": "Limpar sessão",
-    "button.copy_code": "Copiar código",
-  },
-  en: {
-    "common.theme": "Theme",
-    "common.theme.system": "System",
-    "common.theme.light": "Light",
-    "common.theme.dark": "Dark",
-    "common.language": "Language",
-    "common.language.pt": "Português",
-    "common.language.en": "English",
-    "common.language.es": "Español",
-    "common.language.zh": "简体中文",
-    "common.language.fr": "Français",
-    "nav.register": "Register address",
-    "nav.member": "Member area",
-    "nav.public": "Public signup",
-    "nav.public_site": "Public site",
-    "button.register_now": "Register now",
-    "button.member_area": "Open member area",
-    "button.save_session": "Save for this session",
-    "button.clear_key": "Clear key",
-    "button.refresh_dashboard": "Refresh dashboard",
-    "button.run_monitoring": "Run manual collection",
-    "button.access_panel": "Access panel",
-    "button.clear_session": "Clear session",
-    "button.copy_code": "Copy code",
-  },
-  es: {
-    "common.theme": "Tema",
-    "common.theme.system": "Sistema",
-    "common.theme.light": "Claro",
-    "common.theme.dark": "Oscuro",
-    "common.language": "Idioma",
-    "common.language.pt": "Português",
-    "common.language.en": "English",
-    "common.language.es": "Español",
-    "common.language.zh": "简体中文",
-    "common.language.fr": "Français",
-    "nav.register": "Registrar dirección",
-    "nav.member": "Área del residente",
-    "nav.public": "Registro público",
-    "nav.public_site": "Sitio público",
-    "button.register_now": "Registrar ahora",
-    "button.member_area": "Abrir área del residente",
-    "button.save_session": "Guardar en esta sesión",
-    "button.clear_key": "Borrar clave",
-    "button.refresh_dashboard": "Actualizar panel",
-    "button.run_monitoring": "Ejecutar colecta manual",
-    "button.access_panel": "Acceder al panel",
-    "button.clear_session": "Borrar sesión",
-    "button.copy_code": "Copiar código",
-  },
-  zh: {
-    "common.theme": "主题",
-    "common.theme.system": "系统",
-    "common.theme.light": "浅色",
-    "common.theme.dark": "深色",
-    "common.language": "语言",
-    "common.language.pt": "Português",
-    "common.language.en": "English",
-    "common.language.es": "Español",
-    "common.language.zh": "简体中文",
-    "common.language.fr": "Français",
-    "nav.register": "登记地址",
-    "nav.member": "居民区域",
-    "nav.public": "公开登记",
-    "nav.public_site": "公开网站",
-    "button.register_now": "立即登记",
-    "button.member_area": "进入居民区域",
-    "button.save_session": "保存到本次会话",
-    "button.clear_key": "清除密钥",
-    "button.refresh_dashboard": "刷新面板",
-    "button.run_monitoring": "运行手动采集",
-    "button.access_panel": "进入面板",
-    "button.clear_session": "清除会话",
-    "button.copy_code": "复制代码",
-  },
-  fr: {
-    "common.theme": "Thème",
-    "common.theme.system": "Système",
-    "common.theme.light": "Clair",
-    "common.theme.dark": "Sombre",
-    "common.language": "Langue",
-    "common.language.pt": "Português",
-    "common.language.en": "English",
-    "common.language.es": "Español",
-    "common.language.zh": "简体中文",
-    "common.language.fr": "Français",
-    "nav.register": "Inscrire une adresse",
-    "nav.member": "Espace résident",
-    "nav.public": "Inscription publique",
-    "nav.public_site": "Site public",
-    "button.register_now": "Inscrire maintenant",
-    "button.member_area": "Ouvrir l'espace résident",
-    "button.save_session": "Enregistrer pour cette session",
-    "button.clear_key": "Effacer la clé",
-    "button.refresh_dashboard": "Actualiser le tableau",
-    "button.run_monitoring": "Lancer la collecte manuelle",
-    "button.access_panel": "Accéder au panneau",
-    "button.clear_session": "Effacer la session",
-    "button.copy_code": "Copier le code",
-  },
+const common = {
+  pt: { "common.theme": "Tema", "common.theme.light": "Tema claro", "common.theme.system": "Usar tema do sistema", "common.theme.dark": "Tema escuro", "common.language": "Idioma", "common.language.pt": "Português do Brasil", "common.language.en": "English", "common.language.es": "Español", "common.language.fr": "Français", "common.language.zh": "简体中文", "nav.register": "Cadastrar endereço", "nav.member": "Área do morador", "nav.public": "Cadastro público", "nav.public_site": "Site público", "button.register_now": "Cadastrar endereço", "button.member_area": "Acessar área do morador", "button.copy_code": "Copiar código", "button.save_session": "Salvar nesta sessão", "button.clear_key": "Limpar chave", "button.refresh_dashboard": "Atualizar painel", "button.run_monitoring": "Executar coleta agora", "button.access_panel": "Acessar painel", "button.clear_session": "Limpar sessão" },
+  en: { "common.theme": "Theme", "common.theme.light": "Light theme", "common.theme.system": "Use system theme", "common.theme.dark": "Dark theme", "common.language": "Language", "common.language.pt": "Brazilian Portuguese", "common.language.en": "English", "common.language.es": "Spanish", "common.language.fr": "French", "common.language.zh": "Simplified Chinese", "nav.register": "Register address", "nav.member": "Resident area", "nav.public": "Public registration", "nav.public_site": "Public site", "button.register_now": "Register address", "button.member_area": "Open resident area", "button.copy_code": "Copy code", "button.save_session": "Save for this session", "button.clear_key": "Clear key", "button.refresh_dashboard": "Refresh dashboard", "button.run_monitoring": "Run collection now", "button.access_panel": "Open dashboard", "button.clear_session": "Clear session" },
+  es: { "common.theme": "Tema", "common.theme.light": "Tema claro", "common.theme.system": "Usar tema del sistema", "common.theme.dark": "Tema oscuro", "common.language": "Idioma", "common.language.pt": "Portugués de Brasil", "common.language.en": "English", "common.language.es": "Español", "common.language.fr": "Français", "common.language.zh": "Chino simplificado", "nav.register": "Registrar dirección", "nav.member": "Área del residente", "nav.public": "Registro público", "nav.public_site": "Sitio público", "button.register_now": "Registrar dirección", "button.member_area": "Abrir área del residente", "button.copy_code": "Copiar código", "button.save_session": "Guardar en esta sesión", "button.clear_key": "Borrar clave", "button.refresh_dashboard": "Actualizar panel", "button.run_monitoring": "Ejecutar recolección", "button.access_panel": "Abrir panel", "button.clear_session": "Borrar sesión" },
+  fr: { "common.theme": "Thème", "common.theme.light": "Thème clair", "common.theme.system": "Utiliser le thème du système", "common.theme.dark": "Thème sombre", "common.language": "Langue", "common.language.pt": "Portugais du Brésil", "common.language.en": "English", "common.language.es": "Español", "common.language.fr": "Français", "common.language.zh": "Chinois simplifié", "nav.register": "Inscrire une adresse", "nav.member": "Espace résident", "nav.public": "Inscription publique", "nav.public_site": "Site public", "button.register_now": "Inscrire une adresse", "button.member_area": "Ouvrir l'espace résident", "button.copy_code": "Copier le code", "button.save_session": "Enregistrer pour cette session", "button.clear_key": "Effacer la clé", "button.refresh_dashboard": "Actualiser le tableau", "button.run_monitoring": "Lancer la collecte", "button.access_panel": "Accéder au tableau", "button.clear_session": "Effacer la session" },
+  zh: { "common.theme": "主题", "common.theme.light": "浅色主题", "common.theme.system": "使用系统主题", "common.theme.dark": "深色主题", "common.language": "语言", "common.language.pt": "巴西葡萄牙语", "common.language.en": "English", "common.language.es": "Español", "common.language.fr": "Français", "common.language.zh": "简体中文", "nav.register": "登记地址", "nav.member": "居民专区", "nav.public": "公开登记", "nav.public_site": "公开网站", "button.register_now": "登记地址", "button.member_area": "进入居民专区", "button.copy_code": "复制代码", "button.save_session": "保存本次会话", "button.clear_key": "清除密钥", "button.refresh_dashboard": "刷新面板", "button.run_monitoring": "立即运行采集", "button.access_panel": "进入面板", "button.clear_session": "清除会话" },
 };
 
-function storedThemePreference() {
-  const storedValue = window.localStorage.getItem(themeStorageKey);
-  return ["light", "dark", "system"].includes(storedValue) ? storedValue : "system";
-}
+const publicText = {
+  pt: { "public.nav.aria": "Navegação principal", "public.nav.links": "Atalhos", "public.brand.tagline": "avisos de desligamentos programados", "public.nav.how": "Como funciona", "public.hero.eyebrow": "Avisos da sua região", "public.hero.title": "Saiba sobre desligamentos programados perto de você.", "public.hero.copy": "Cadastre seu endereço para receber avisos. Se já tem cadastro, entre para consultar seus avisos.", "public.hero.member": "Já tenho cadastro", "public.source.title": "Serviço independente", "public.source.copy": "Consulte a Celesc para informações oficiais e atualizadas.", "public.steps.aria": "Como funciona", "public.step.one.title": "Informe seu endereço", "public.step.one.copy": "Pedimos apenas os dados necessários para localizar sua região.", "public.step.two.title": "Confirme seus contatos", "public.step.two.copy": "Confirme o e-mail e responda à mensagem enviada no WhatsApp.", "public.step.three.title": "Acompanhe seus avisos", "public.step.three.copy": "Use seu telefone e código de acesso para entrar quando quiser.", "public.form.eyebrow": "Cadastro", "public.form.title": "Cadastre seu endereço", "public.form.copy": "Informe os dados do local onde você quer receber avisos.", "public.form.member": "Já se cadastrou? Entre na área do morador.", "public.form.name": "Nome", "public.form.email": "E-mail para confirmação", "public.form.phone": "Telefone ou WhatsApp", "public.form.municipality": "Município", "public.form.neighborhood": "Bairro", "public.form.street": "Rua", "public.form.number": "Número", "public.form.zipcode": "CEP", "public.form.wide_alerts": "Também quero receber avisos gerais do município quando o endereço do aviso não estiver detalhado.", "public.form.accept": "Aceito os", "public.form.and": "e a", "public.form.submit": "Continuar", "public.terms": "Termos", "public.privacy": "Política de Privacidade", "public.cookies": "Cookies", "public.verification.eyebrow": "Confirmação", "public.verification.title": "Confirme seu e-mail", "public.verification.copy": "Digite o código enviado para seu e-mail. Ele vale por 48 horas.", "public.verification.code": "Código de confirmação", "public.verification.submit": "Confirmar e-mail", "public.access.eyebrow": "Acesso", "public.access.title": "Guarde seu código de acesso", "public.access.copy": "Use este código com seu telefone para entrar na área do morador. Ele aparece apenas agora.", "public.footer.copy": "Monitor Comunitário: avisos públicos de desligamentos programados.", "public.footer.aria": "Links legais", "public.footer.preferences": "Preferências de privacidade", "public.consent.aria": "Preferências de privacidade", "public.consent.title": "Sua privacidade", "public.consent.copy": "Usamos o necessário para manter seu cadastro e suas preferências. Publicidade e análises são opcionais.", "public.consent.customize": "Escolher preferências", "public.consent.necessary": "Necessários para o funcionamento do site.", "public.consent.analytics": "Análises para melhorar o serviço.", "public.consent.ads": "Publicidade.", "public.consent.reject": "Usar apenas o necessário", "public.consent.accept": "Aceitar opcionais", "public.consent.save": "Salvar", "public.status.submitting": "Enviando cadastro...", "public.status.required": "Informe nome, e-mail, telefone e município.", "public.status.legal": "Para cadastrar, aceite os Termos de Uso e a Política de Privacidade.", "public.status.email_sent": "Enviamos um código para seu e-mail. Confirme-o para continuar.", "public.status.confirming": "Confirmando e-mail...", "public.status.code_required": "Informe o e-mail e o código de seis dígitos.", "public.access.unavailable": "Código indisponível", "public.access.none": "Nenhum código disponível para copiar.", "public.access.copied": "Código copiado. Guarde-o para entrar na área do morador.", "public.access.manual": "Copie manualmente seu código: {code}", "public.consent.necessary_only": "No momento, usamos apenas o necessário para lembrar suas preferências.", "public.consent.ok": "Ok", "public.ads.waiting": "Anúncio desativado ou aguardando consentimento.", "public.ads.missing": "Publicidade ativada por flag, mas sem provedor configurado.", "public.ads.pending": "Publicidade ativada, mas o provedor ainda não respondeu.", "public.ads.active": "Publicidade ativada conforme consentimento." },
+  en: { "public.nav.aria": "Main navigation", "public.nav.links": "Shortcuts", "public.brand.tagline": "scheduled outage notices", "public.nav.how": "How it works", "public.hero.eyebrow": "Notices for your area", "public.hero.title": "Know about scheduled outages near you.", "public.hero.copy": "Register your address to receive notices. Already registered? Sign in to view your notices.", "public.hero.member": "I am already registered", "public.source.title": "Independent service", "public.source.copy": "Check Celesc for official and current information.", "public.steps.aria": "How it works", "public.step.one.title": "Share your address", "public.step.one.copy": "We request only the details needed to locate your area.", "public.step.two.title": "Confirm your contacts", "public.step.two.copy": "Confirm your email and reply to the WhatsApp message.", "public.step.three.title": "Follow your notices", "public.step.three.copy": "Use your phone and access code whenever you want to sign in.", "public.form.eyebrow": "Registration", "public.form.title": "Register your address", "public.form.copy": "Tell us where you want to receive notices.", "public.form.member": "Already registered? Open the resident area.", "public.form.name": "Name", "public.form.email": "Confirmation email", "public.form.phone": "Phone or WhatsApp", "public.form.municipality": "Municipality", "public.form.neighborhood": "Neighborhood", "public.form.street": "Street", "public.form.number": "Number", "public.form.zipcode": "Postal code", "public.form.wide_alerts": "I also want municipality-wide notices when the notice does not include a detailed address.", "public.form.accept": "I accept the", "public.form.and": "and the", "public.form.submit": "Continue", "public.terms": "Terms", "public.privacy": "Privacy Policy", "public.cookies": "Cookies", "public.verification.eyebrow": "Confirmation", "public.verification.title": "Confirm your email", "public.verification.copy": "Enter the code sent to your email. It is valid for 48 hours.", "public.verification.code": "Confirmation code", "public.verification.submit": "Confirm email", "public.access.eyebrow": "Access", "public.access.title": "Keep your access code", "public.access.copy": "Use this code with your phone to enter the resident area. It appears only now.", "public.footer.copy": "Community Monitor: public scheduled outage notices.", "public.footer.aria": "Legal links", "public.footer.preferences": "Privacy preferences", "public.consent.aria": "Privacy preferences", "public.consent.title": "Your privacy", "public.consent.copy": "We use what is needed for your registration and preferences. Advertising and analytics are optional.", "public.consent.customize": "Choose preferences", "public.consent.necessary": "Required for the site to work.", "public.consent.analytics": "Analytics to improve the service.", "public.consent.ads": "Advertising.", "public.consent.reject": "Use only what is necessary", "public.consent.accept": "Accept optional items", "public.consent.save": "Save", "public.status.submitting": "Submitting registration...", "public.status.required": "Enter name, email, phone, and municipality.", "public.status.legal": "Accept the Terms of Use and Privacy Policy to register.", "public.status.email_sent": "We sent a code to your email. Confirm it to continue.", "public.status.confirming": "Confirming email...", "public.status.code_required": "Enter your email and the six-digit code.", "public.access.unavailable": "Code unavailable", "public.access.none": "No code available to copy.", "public.access.copied": "Code copied. Keep it to enter the resident area.", "public.access.manual": "Copy your code manually: {code}", "public.consent.necessary_only": "We currently use only what is needed to remember your preferences.", "public.consent.ok": "OK", "public.ads.waiting": "Advertising is disabled or awaiting consent.", "public.ads.missing": "Advertising is enabled but no provider is configured.", "public.ads.pending": "Advertising is enabled, but the provider has not responded yet.", "public.ads.active": "Advertising enabled according to consent." },
+};
 
-function resolvedTheme(themePreference) {
-  if (themePreference === "system") {
-    return systemDarkQuery.matches ? "dark" : "light";
-  }
+publicText.pt["public.ads.label"] = "Publicidade";
+publicText.pt["public.ads.sidebar.title"] = "Anúncio do bairro";
+publicText.pt["public.ads.sidebar.copy"] = "Espaço para parceiros locais e campanhas comunitárias.";
+publicText.pt["public.ads.footer"] = "Espaço para campanha, patrocinador ou utilidade pública.";
+Object.assign(publicText.en, {
+  "public.ads.label": "Advertising",
+  "public.ads.sidebar.title": "Neighborhood ad",
+  "public.ads.sidebar.copy": "Space for local partners and community campaigns.",
+  "public.ads.footer": "Space for a campaign, sponsor, or public service.",
+});
+publicText.es = { ...publicText.en, ...common.es,
+  "public.nav.aria": "Navegación principal", "public.nav.links": "Accesos directos", "public.brand.tagline": "avisos de cortes programados", "public.nav.how": "Cómo funciona", "public.hero.eyebrow": "Avisos de tu zona", "public.hero.title": "Conoce los cortes programados cerca de ti.", "public.hero.copy": "Registra tu dirección para recibir avisos. Si ya tienes registro, entra para consultar tus avisos.", "public.hero.member": "Ya tengo registro", "public.source.title": "Servicio independiente", "public.source.copy": "Consulta a Celesc para información oficial y actualizada.", "public.steps.aria": "Cómo funciona", "public.step.one.title": "Indica tu dirección", "public.step.one.copy": "Pedimos solo los datos necesarios para localizar tu zona.", "public.step.two.title": "Confirma tus contactos", "public.step.two.copy": "Confirma el correo y responde al mensaje enviado por WhatsApp.", "public.step.three.title": "Consulta tus avisos", "public.step.three.copy": "Usa tu teléfono y código de acceso para entrar cuando quieras.", "public.form.eyebrow": "Registro", "public.form.title": "Registra tu dirección", "public.form.copy": "Indica dónde quieres recibir avisos.", "public.form.member": "¿Ya te registraste? Entra al área del residente.", "public.form.name": "Nombre", "public.form.email": "Correo de confirmación", "public.form.phone": "Teléfono o WhatsApp", "public.form.municipality": "Municipio", "public.form.neighborhood": "Barrio", "public.form.street": "Calle", "public.form.number": "Número", "public.form.zipcode": "Código postal", "public.form.wide_alerts": "También quiero avisos generales del municipio cuando el aviso no incluya una dirección detallada.", "public.form.accept": "Acepto los", "public.form.and": "y la", "public.form.submit": "Continuar", "public.terms": "Términos", "public.privacy": "Política de Privacidad", "public.verification.eyebrow": "Confirmación", "public.verification.title": "Confirma tu correo", "public.verification.copy": "Introduce el código enviado a tu correo. Es válido durante 48 horas.", "public.verification.code": "Código de confirmación", "public.verification.submit": "Confirmar correo", "public.access.eyebrow": "Acceso", "public.access.title": "Guarda tu código de acceso", "public.access.copy": "Usa este código con tu teléfono para entrar al área del residente. Solo aparece ahora.", "public.footer.copy": "Monitor Comunitario: avisos públicos de cortes programados.", "public.footer.aria": "Enlaces legales", "public.footer.preferences": "Preferencias de privacidad", "public.consent.aria": "Preferencias de privacidad", "public.consent.title": "Tu privacidad", "public.consent.copy": "Usamos lo necesario para tu registro y preferencias. La publicidad y los análisis son opcionales.", "public.consent.customize": "Elegir preferencias", "public.consent.necessary": "Necesarios para que el sitio funcione.", "public.consent.analytics": "Análisis para mejorar el servicio.", "public.consent.ads": "Publicidad.", "public.consent.reject": "Usar solo lo necesario", "public.consent.accept": "Aceptar opcionales", "public.consent.save": "Guardar", "public.ads.label": "Publicidad", "public.ads.sidebar.title": "Anuncio del barrio", "public.ads.sidebar.copy": "Espacio para socios locales y campañas comunitarias.", "public.ads.footer": "Espacio para campaña, patrocinador o servicio público." };
+publicText.fr = { ...publicText.en, ...common.fr,
+  "public.nav.aria": "Navigation principale", "public.nav.links": "Raccourcis", "public.brand.tagline": "avis de coupures programmées", "public.nav.how": "Comment ça marche", "public.hero.eyebrow": "Avis dans votre zone", "public.hero.title": "Informez-vous des coupures programmées près de chez vous.", "public.hero.copy": "Inscrivez votre adresse pour recevoir des avis. Déjà inscrit ? Connectez-vous pour les consulter.", "public.hero.member": "Je suis déjà inscrit", "public.source.title": "Service indépendant", "public.source.copy": "Consultez Celesc pour des informations officielles et à jour.", "public.steps.aria": "Comment ça marche", "public.step.one.title": "Indiquez votre adresse", "public.step.one.copy": "Nous demandons seulement les informations nécessaires pour localiser votre zone.", "public.step.two.title": "Confirmez vos contacts", "public.step.two.copy": "Confirmez votre e-mail et répondez au message WhatsApp.", "public.step.three.title": "Suivez vos avis", "public.step.three.copy": "Utilisez votre téléphone et votre code d'accès quand vous le souhaitez.", "public.form.eyebrow": "Inscription", "public.form.title": "Inscrivez votre adresse", "public.form.copy": "Indiquez où vous souhaitez recevoir des avis.", "public.form.member": "Déjà inscrit ? Ouvrez l'espace résident.", "public.form.name": "Nom", "public.form.email": "E-mail de confirmation", "public.form.phone": "Téléphone ou WhatsApp", "public.form.municipality": "Municipalité", "public.form.neighborhood": "Quartier", "public.form.street": "Rue", "public.form.number": "Numéro", "public.form.zipcode": "Code postal", "public.form.wide_alerts": "Je souhaite aussi recevoir les avis de toute la municipalité quand l'adresse n'est pas détaillée.", "public.form.accept": "J'accepte les", "public.form.and": "et la", "public.form.submit": "Continuer", "public.terms": "Conditions", "public.privacy": "Politique de confidentialité", "public.verification.eyebrow": "Confirmation", "public.verification.title": "Confirmez votre e-mail", "public.verification.copy": "Saisissez le code envoyé par e-mail. Il est valable 48 heures.", "public.verification.code": "Code de confirmation", "public.verification.submit": "Confirmer l'e-mail", "public.access.eyebrow": "Accès", "public.access.title": "Conservez votre code d'accès", "public.access.copy": "Utilisez ce code avec votre téléphone pour accéder à l'espace résident. Il n'apparaît que maintenant.", "public.footer.copy": "Monitor Comunitário : avis publics de coupures programmées.", "public.footer.aria": "Liens légaux", "public.footer.preferences": "Préférences de confidentialité", "public.consent.aria": "Préférences de confidentialité", "public.consent.title": "Votre vie privée", "public.consent.copy": "Nous utilisons le nécessaire pour votre inscription et vos préférences. Publicité et analyses sont facultatives.", "public.consent.customize": "Choisir les préférences", "public.consent.necessary": "Nécessaires au fonctionnement du site.", "public.consent.analytics": "Analyses pour améliorer le service.", "public.consent.ads": "Publicité.", "public.consent.reject": "Utiliser seulement le nécessaire", "public.consent.accept": "Accepter les options", "public.consent.save": "Enregistrer", "public.ads.label": "Publicité", "public.ads.sidebar.title": "Annonce du quartier", "public.ads.sidebar.copy": "Espace pour partenaires locaux et campagnes communautaires.", "public.ads.footer": "Espace pour campagne, sponsor ou service public." };
+publicText.zh = { ...publicText.en, ...common.zh,
+  "public.nav.aria": "主导航", "public.nav.links": "快捷入口", "public.brand.tagline": "计划停电通知", "public.nav.how": "工作方式", "public.hero.eyebrow": "您所在地区的通知", "public.hero.title": "及时了解您附近的计划停电。", "public.hero.copy": "登记您的地址以接收通知。已登记？请登录查看通知。", "public.hero.member": "我已登记", "public.source.title": "独立服务", "public.source.copy": "请向 Celesc 查询官方最新信息。", "public.steps.aria": "工作方式", "public.step.one.title": "填写地址", "public.step.one.copy": "我们只收集定位您所在地区所需的信息。", "public.step.two.title": "确认联系方式", "public.step.two.copy": "确认电子邮件并回复 WhatsApp 消息。", "public.step.three.title": "查看通知", "public.step.three.copy": "随时使用电话和访问代码登录。", "public.form.eyebrow": "登记", "public.form.title": "登记您的地址", "public.form.copy": "告诉我们您希望在哪里接收通知。", "public.form.member": "已登记？进入居民专区。", "public.form.name": "姓名", "public.form.email": "确认电子邮件", "public.form.phone": "电话或 WhatsApp", "public.form.municipality": "市", "public.form.neighborhood": "街区", "public.form.street": "街道", "public.form.number": "门牌号", "public.form.zipcode": "邮政编码", "public.form.wide_alerts": "当通知没有详细地址时，我也希望接收全市通知。", "public.form.accept": "我接受", "public.form.and": "和", "public.form.submit": "继续", "public.terms": "条款", "public.privacy": "隐私政策", "public.verification.eyebrow": "确认", "public.verification.title": "确认您的电子邮件", "public.verification.copy": "输入发送到您邮箱的代码。有效期为 48 小时。", "public.verification.code": "确认代码", "public.verification.submit": "确认电子邮件", "public.access.eyebrow": "访问", "public.access.title": "保存您的访问代码", "public.access.copy": "使用此代码和电话进入居民专区。它仅在现在显示。", "public.footer.copy": "社区监测：公开计划停电通知。", "public.footer.aria": "法律链接", "public.footer.preferences": "隐私偏好", "public.consent.aria": "隐私偏好", "public.consent.title": "您的隐私", "public.consent.copy": "我们使用登记和偏好所需的信息。广告和分析为可选项。", "public.consent.customize": "选择偏好", "public.consent.necessary": "网站运行所必需。", "public.consent.analytics": "用于改善服务的分析。", "public.consent.ads": "广告。", "public.consent.reject": "仅使用必要项", "public.consent.accept": "接受可选项", "public.consent.save": "保存", "public.ads.label": "广告", "public.ads.sidebar.title": "社区广告", "public.ads.sidebar.copy": "本地合作伙伴和社区活动的空间。", "public.ads.footer": "活动、赞助商或公共服务广告位。" };
+const languageDictionaries = Object.fromEntries(supportedLanguages.map((language) => [language, { ...common[language], ...publicText[language] }]));
+let currentLanguage = "pt";
 
-  return themePreference;
-}
+function storedThemePreference() { const value = window.localStorage.getItem(themeStorageKey); return ["light", "dark", "system"].includes(value) ? value : "system"; }
+function resolvedTheme(preference) { return preference === "system" ? (systemDarkQuery.matches ? "dark" : "light") : preference; }
+function syncThemeButtons(preference) { document.querySelectorAll("[data-theme-option]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.themeOption === preference))); }
+function applyTheme(preference) { const value = ["light", "dark", "system"].includes(preference) ? preference : "system"; document.documentElement.dataset.themePreference = value; document.documentElement.dataset.theme = resolvedTheme(value); if (themeSelector) themeSelector.value = value; syncThemeButtons(value); }
+function persistThemePreference(preference) { window.localStorage.setItem(themeStorageKey, preference); applyTheme(preference); }
+function storedLanguagePreference() { const value = window.localStorage.getItem(languageStorageKey); return supportedLanguages.includes(value) ? value : "pt"; }
+function translate(key, replacements = {}) { const template = languageDictionaries[currentLanguage][key] || languageDictionaries.pt[key] || key; return Object.entries(replacements).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), template); }
+function applyLanguage(preference) { currentLanguage = supportedLanguages.includes(preference) ? preference : "pt"; document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : currentLanguage; document.documentElement.dataset.language = currentLanguage; if (languageSelector) languageSelector.value = currentLanguage; document.querySelectorAll("[data-i18n]").forEach((element) => { element.textContent = translate(element.dataset.i18n); }); document.querySelectorAll("[data-i18n-aria-label]").forEach((element) => { element.setAttribute("aria-label", translate(element.dataset.i18nAriaLabel)); }); document.querySelectorAll("[data-i18n-title]").forEach((element) => { element.title = translate(element.dataset.i18nTitle); }); document.querySelectorAll("[data-language-option]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.languageOption === currentLanguage))); }
+function persistLanguagePreference(preference) { window.localStorage.setItem(languageStorageKey, preference); applyLanguage(preference); }
 
-function applyTheme(themePreference) {
-  const preference = ["light", "dark", "system"].includes(themePreference)
-    ? themePreference
-    : "system";
-
-  document.documentElement.dataset.themePreference = preference;
-  document.documentElement.dataset.theme = resolvedTheme(preference);
-
-  if (themeSelector) {
-    themeSelector.value = preference;
-  }
-}
-
-function persistThemePreference(themePreference) {
-  window.localStorage.setItem(themeStorageKey, themePreference);
-  applyTheme(themePreference);
-}
-
-function storedLanguagePreference() {
-  const storedValue = window.localStorage.getItem(languageStorageKey);
-  return supportedLanguages.includes(storedValue) ? storedValue : "pt";
-}
-
-function applyLanguage(languagePreference) {
-  const language = supportedLanguages.includes(languagePreference) ? languagePreference : "pt";
-  const dictionary = languageDictionaries[language];
-
-  document.documentElement.lang = language === "zh" ? "zh-CN" : language;
-  document.documentElement.dataset.language = language;
-
-  if (languageSelector) {
-    languageSelector.value = language;
-  }
-
-  document.querySelectorAll("[data-i18n]").forEach((element) => {
-    const key = element.dataset.i18n;
-    const translatedText = dictionary[key] || languageDictionaries.pt[key];
-
-    if (translatedText) {
-      element.textContent = translatedText;
-    }
-  });
-}
-
-function persistLanguagePreference(languagePreference) {
-  window.localStorage.setItem(languageStorageKey, languagePreference);
-  applyLanguage(languagePreference);
-}
-
+window.monitorTranslations = { translate, currentLanguage: () => currentLanguage };
 applyTheme(storedThemePreference());
 applyLanguage(storedLanguagePreference());
-
-themeSelector?.addEventListener("change", (event) => {
-  persistThemePreference(event.target.value);
-});
-
-languageSelector?.addEventListener("change", (event) => {
-  persistLanguagePreference(event.target.value);
-});
-
-systemDarkQuery.addEventListener("change", () => {
-  if (storedThemePreference() === "system") {
-    applyTheme("system");
-  }
-});
+themeSelector?.addEventListener("change", (event) => persistThemePreference(event.target.value));
+languageSelector?.addEventListener("change", (event) => persistLanguagePreference(event.target.value));
+document.querySelectorAll("[data-theme-option]").forEach((button) => button.addEventListener("click", () => persistThemePreference(button.dataset.themeOption)));
+document.querySelectorAll("[data-language-option]").forEach((button) => button.addEventListener("click", () => persistLanguagePreference(button.dataset.languageOption)));
+systemDarkQuery.addEventListener("change", () => { if (storedThemePreference() === "system") applyTheme("system"); });

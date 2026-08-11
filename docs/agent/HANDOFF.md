@@ -183,6 +183,16 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 
 ## Template para futuras atualizacoes
 
+## Atualizacao 2026-08-10 - frontend publico
+
+- Issue: #133. Branch: `feat/public-frontend-layout`.
+- A pagina publica foi reorganizada com abertura curta, faixa de etapas, formulario prioritario e controles compactos de tema e idioma.
+- Preferencias mantem os mesmos valores em local storage. Tema usa botoes claro/sistema/escuro; idioma usa os cinco atalhos visuais solicitados.
+- O conteudo publico, formulario, consentimento e espacos de marketing possuem traducoes proprias em portugues, ingles, espanhol, frances e chines simplificado. Mensagens dinamicas usam a mesma camada de traducoes.
+- Espacos de marketing foram preservados como um slot lateral/discreto e uma faixa horizontal apos o conteudo, sem competir com o cadastro no topo.
+- Validacao: `uv run ruff check .`, `uv run mypy src` e `uv run pytest` passaram; 139 testes aprovados. Capturas locais revisadas em desktop e mobile.
+- Pendente separado: #132 remove o codigo de acesso reutilizavel dos eventos persistidos antes de promover o projeto como case final de privacidade.
+
 ```text
 Data:
 Agente:
