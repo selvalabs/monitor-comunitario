@@ -6,6 +6,9 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 
 ## Estado atual
 
+- Issue `#138`: logs do loop do bot Telegram usam apenas o tipo da exceção;
+  URLs autenticadas, tokens, payloads e traceback não são serializados no log.
+
 - Revisão editorial em andamento na issue `#130` na branch `feat/product-copy`.
 - Escopo: copy em português da home, cadastro, consentimento, e-mail/WhatsApp de confirmação,
   área do morador, admin e páginas legais; sem mudança de rotas, dados, autenticação ou entrega.
