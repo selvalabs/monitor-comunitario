@@ -194,6 +194,14 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
   desativa URLs clicaveis e nunca retorna MIME bruto ou anexos.
 - Estado: implementado e validado localmente; ainda nao implantado.
 
+## Atualizacao 2026-08-11 - remetente visivel da mailbox
+
+- Issue: #146. Branch: `fix/mailbox-mime-from`.
+- Correcao: a mailbox passa a exibir o cabecalho MIME `From` quando presente,
+  em vez do remetente de envelope usado para bounces.
+- O envelope armazenado permanece inalterado para fins tecnicos; nao e exibido
+  pelo bot Telegram.
+
 ## Template para futuras atualizacoes
 
 ## Atualizacao 2026-08-11 - codigo de acesso efemero
