@@ -24,6 +24,10 @@ const consentKey = "monitor-comunitario:consent";
 
 let latestAccessCode = "";
 
+function translate(key, replacements) {
+  return window.monitorTranslations?.translate(key, replacements) || key;
+}
+
 let publicConfig = {
   ads_enabled: false,
   ads_provider: "placeholder",
@@ -101,22 +105,22 @@ async function createUser(payload) {
 
 function showAccessCodePanel(accessCode) {
   latestAccessCode = accessCode || "";
-  accessCodeValue.textContent = latestAccessCode || "Código indisponível";
+  accessCodeValue.textContent = latestAccessCode || translate("public.access.unavailable");
   accessCodePanel.hidden = false;
   accessCodePanel.focus();
 }
 
 async function copyAccessCode() {
   if (!latestAccessCode) {
-    setStatus("Nenhum código disponível para copiar.", true);
+    setStatus(translate("public.access.none"), true);
     return;
   }
 
   try {
     await navigator.clipboard.writeText(latestAccessCode);
-    setStatus("Código copiado. Guarde-o para entrar na área do morador.");
+    setStatus(translate("public.access.copied"));
   } catch {
-    setStatus(`Copie manualmente seu código: ${latestAccessCode}`);
+    setStatus(translate("public.access.manual", { code: latestAccessCode }));
   }
 }
 
@@ -319,21 +323,21 @@ function showConsentBanner(force = false) {
     }
 
     consentBannerText.textContent =
-      "No momento, usamos apenas o necessário para lembrar suas preferências.";
+      translate("public.consent.necessary_only");
     consentPreferences.hidden = true;
     saveConsentButton.hidden = true;
     customizeConsentButton.hidden = true;
     rejectConsentButton.hidden = true;
-    acceptConsentButton.textContent = "Ok";
+    acceptConsentButton.textContent = translate("public.consent.ok");
     consentBanner.classList.add("is-visible");
     return;
   }
 
   consentBannerText.textContent =
-    "Usamos o necessário para manter seu cadastro e suas preferências. Publicidade e análises são opcionais.";
+    translate("public.consent.copy");
   customizeConsentButton.hidden = false;
   rejectConsentButton.hidden = false;
-  acceptConsentButton.textContent = "Aceitar opcionais";
+  acceptConsentButton.textContent = translate("public.consent.accept");
   consentBanner.classList.add("is-visible");
 }
 
@@ -383,18 +387,18 @@ form.addEventListener("submit", async (event) => {
   const legalTermsInput = document.querySelector("#accept_legal_terms");
 
   if (!legalTermsInput.checked) {
-    setStatus("Para cadastrar, aceite os Termos de Uso e a Política de Privacidade.", true);
+    setStatus(translate("public.status.legal"), true);
     return;
   }
 
   const payload = formToPayload(form);
 
   if (!payload.name || !payload.email || !payload.phone || !payload.municipality) {
-    setStatus("Informe nome, e-mail, telefone e município.", true);
+    setStatus(translate("public.status.required"), true);
     return;
   }
 
-  setStatus("Enviando cadastro...");
+  setStatus(translate("public.status.submitting"));
   accessCodePanel.hidden = true;
 
   try {
@@ -403,7 +407,7 @@ form.addEventListener("submit", async (event) => {
       verificationEmail.value = payload.email;
       emailVerificationPanel.hidden = false;
       emailVerificationPanel.focus();
-      setStatus("Enviamos um código para seu e-mail. Confirme-o para continuar.");
+      setStatus(translate("public.status.email_sent"));
       form.reset();
       return;
     }
@@ -425,11 +429,11 @@ verifyEmailButton?.addEventListener("click", async () => {
   const email = verificationEmail.value.trim();
   const otp = verificationOtp.value.trim();
   if (!email || otp.length !== 6) {
-    setStatus("Informe o e-mail e o código de seis dígitos.", true);
+    setStatus(translate("public.status.code_required"), true);
     return;
   }
   verifyEmailButton.disabled = true;
-  setStatus("Confirmando e-mail...");
+  setStatus(translate("public.status.confirming"));
   try {
     const result = await verifyEmail(email, otp);
     emailVerificationPanel.hidden = true;
