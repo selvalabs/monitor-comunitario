@@ -33,3 +33,14 @@ def test_production_compose_applies_edge_rate_limit_to_monitor_router() -> None:
     assert "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.average=30" in compose
     assert "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.burst=60" in compose
     assert "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.period=1m" in compose
+
+
+def test_production_compose_keeps_internal_api_off_public_edge() -> None:
+    compose = (ROOT / "docker-compose.production.yml").read_text(encoding="utf-8")
+
+    internal_service = compose.split("  api-internal:", 1)[1].split("  cloudflared:", 1)[0]
+    assert "monitor_comunitario.api.internal:app" in internal_service
+    assert "ports:" not in internal_service
+    assert "traefik." not in internal_service
+    assert "monitor_internal" in internal_service
+    assert "MONITOR_BOT_API_URL=http://api-internal:8000" in compose

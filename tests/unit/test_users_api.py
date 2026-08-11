@@ -5,6 +5,7 @@ from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
+from monitor_comunitario.api.internal import app as internal_app
 from monitor_comunitario.api.main import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
@@ -269,11 +270,12 @@ def test_email_and_whatsapp_verification_flow(
     assert '"phone_confirmation_ttl_hours":48' in request_event.payload_json
     assert store.ttls[-1] == 172800
 
-    callback = client.post(
-        "/users/internal/hermes/phone-confirmation",
-        headers={"X-Hermes-Callback-Secret": "callback-secret"},
-        json={"phone": "5548999912345", "reply": "OK"},
-    )
+    with TestClient(internal_app) as internal_client:
+        callback = internal_client.post(
+            "/users/internal/hermes/phone-confirmation",
+            headers={"X-Hermes-Callback-Secret": "callback-secret"},
+            json={"phone": "5548999912345", "reply": "OK"},
+        )
     assert callback.status_code == 200
     assert callback.json()["status"] == "confirmed"
 
