@@ -6,6 +6,13 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 
 ## Estado atual
 
+- Revisão editorial em andamento na issue `#130` na branch `feat/product-copy`.
+- Escopo: copy em português da home, cadastro, consentimento, e-mail/WhatsApp de confirmação,
+  área do morador, admin e páginas legais; sem mudança de rotas, dados, autenticação ou entrega.
+- Validação mais recente: `uv run ruff check .`, `uv run mypy src` e `uv run pytest` verdes
+  (`139 passed`, um aviso de depreciação do TestClient).
+- Pendência: abrir PR, aguardar CI e revisar visualmente as telas em tema claro e escuro antes de deploy.
+
 - Projeto: Monitor Comunitario - Celesc Outage Watcher.
 - Estado: MVP tecnico com documentacao, CI, Docker, scraper, parser, matcher, area do morador, admin protegido e worker diario.
 - Protocolo: SelvaLabs Agent OS, read-only first, issue/branch/PR/CI/handoff, Notion/Cerebro ao fim de cada etapa.
