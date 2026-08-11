@@ -15,3 +15,9 @@ def test_internal_app_recognizes_internal_routes() -> None:
     with TestClient(internal_app) as client:
         assert client.get("/internal/hermes/events").status_code == 401
         assert client.get("/internal/monitor-bot/registration-events").status_code != 404
+
+
+def test_internal_app_exposes_private_health_checks() -> None:
+    with TestClient(internal_app) as client:
+        assert client.get("/health").status_code == 200
+        assert client.get("/ready").status_code == 200
