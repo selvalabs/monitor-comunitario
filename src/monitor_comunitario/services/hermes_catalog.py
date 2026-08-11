@@ -139,27 +139,22 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
             "Vou limitar a resposta ao escopo do projeto."
         ),
     ),
-"member_phone_confirmation_v1": HermesTemplate(
+    "member_phone_confirmation_v1": HermesTemplate(
         key="member_phone_confirmation_v1",
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
-            "Oi, {name}! Esta é uma confirmação do Monitor Comunitário. "
-            "Ao responder OK, você confirma que deseja receber notificações sobre "
-            "possíveis desligamentos programados ou falta de energia no "
-            "bairro/endereço cadastrado. "
-            "As informações são baseadas em avisos públicos e o Monitor Comunitário "
-            "não é um canal oficial da Celesc. "
-            "Saiba mais: {url} Responda OK para confirmar ou CANCELAR para não ativar o cadastro. "
-            "Voce tem {phone_confirmation_ttl_hours} horas para responder. "
-            "Sem resposta, a solicitação expira automaticamente."
+            "Oi, {name}. Você quer receber avisos de desligamentos programados para o endereço "
+            "cadastrado? Responda OK para confirmar ou CANCELAR para encerrar o cadastro. "
+            "Esta confirmação vale por {phone_confirmation_ttl_hours} horas. "
+            "Saiba mais: {url}"
         ),
     ),
     "member_access_code_v1": HermesTemplate(
         key="member_access_code_v1",
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
-            "Cadastro confirmado, {name}! Seu codigo privado e {access_code}. "
-            "Acesse {url} para entrar na area do morador."
+            "Cadastro confirmado, {name}. Guarde seu código de acesso: {access_code}. "
+            "Entre na área do morador para ver seus avisos: {url}"
         ),
     ),
     "human_escalation_v1": HermesTemplate(

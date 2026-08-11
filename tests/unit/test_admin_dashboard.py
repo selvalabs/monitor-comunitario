@@ -8,7 +8,9 @@ def test_admin_dashboard_page_is_served_by_direct_url() -> None:
         response = client.get("/admin")
 
     assert response.status_code == 200
-    assert "Painel de diagnóstico" in response.text
+    assert "Visão da operação" in response.text
+    assert "Executar coleta agora" in response.text
+    assert "Cadastros pendentes" in response.text
     assert "ADMIN_API_KEY" in response.text
     assert "sessionStorage" not in response.text
     assert "X-Admin-API-Key" not in response.text
@@ -23,7 +25,7 @@ def test_admin_dashboard_page_trailing_slash_is_served() -> None:
         response = client.get("/admin/")
 
     assert response.status_code == 200
-    assert "Painel de diagnóstico" in response.text
+    assert "Visão da operação" in response.text
 
 
 def test_admin_dashboard_javascript_is_served_without_hardcoded_key() -> None:

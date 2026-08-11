@@ -26,3 +26,12 @@ def test_catalog_contains_operational_event_types() -> None:
     assert "notification_ready" in HERMES_EVENT_TYPES
     assert "scraper_failed" in HERMES_ESCALATION_EVENTS
     assert "human_escalation_v1" in HERMES_TEMPLATES
+
+
+def test_registration_confirmation_templates_explain_the_next_step() -> None:
+    confirmation = get_template("member_phone_confirmation_v1")
+    completion = get_template("member_access_code_v1")
+
+    assert "Responda OK para confirmar ou CANCELAR para encerrar o cadastro." in confirmation.body
+    assert "Esta confirmação vale por {phone_confirmation_ttl_hours} horas." in confirmation.body
+    assert "Guarde seu código de acesso: {access_code}." in completion.body

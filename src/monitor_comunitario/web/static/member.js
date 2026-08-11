@@ -38,7 +38,7 @@ function getMemberSession() {
 function clearMemberSession() {
   window.sessionStorage.removeItem(memberSessionKey);
   memberPanel.hidden = true;
-  setMemberStatus("Sessão limpa. Informe telefone e código para acessar novamente.");
+  setMemberStatus("Você saiu desta sessão.");
 }
 
 function resetDeleteConfirmation() {
@@ -55,20 +55,20 @@ function buildNotificationSummary(notification) {
   const message = String(notification.message || "").trim();
 
   if (!message) {
-    return "Alerta registrado para este cadastro.";
+    return "Aviso registrado para este endereço.";
   }
 
   const firstSentence = message.split(/(?<=[.!?])\s+/)[0];
   const summary = firstSentence.length <= 180 ? firstSentence : `${firstSentence.slice(0, 177)}...`;
 
-  return summary || "Alerta registrado para este cadastro.";
+  return summary || "Aviso registrado para este endereço.";
 }
 
 function renderNotifications(notifications) {
   memberNotifications.innerHTML = "";
 
   if (!notifications.length) {
-    memberNotifications.innerHTML = "<div class=\"empty-state\">Nenhum alerta encontrado para este cadastro.</div>";
+    memberNotifications.innerHTML = "<div class=\"empty-state\">Não encontramos avisos para seu endereço.</div>";
     return;
   }
 
@@ -90,7 +90,7 @@ function renderNotifications(notifications) {
     details.className = "notification-original";
 
     const detailsSummary = document.createElement("summary");
-    detailsSummary.textContent = "Texto original da Celesc";
+    detailsSummary.textContent = "Ver aviso original da Celesc";
 
     const message = document.createElement("p");
     message.textContent = notification.message || "Texto original indisponível.";
@@ -194,7 +194,7 @@ confirmDeleteButton.addEventListener("click", async () => {
     }
     clearMemberSession();
     resetDeleteConfirmation();
-    setMemberStatus("Cadastro e dados relacionados excluídos permanentemente.");
+    setMemberStatus("Seu cadastro e seus dados foram excluídos.");
   } catch (error) {
     confirmDeleteButton.disabled = false;
     setMemberStatus(error.message, true);

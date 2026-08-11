@@ -46,22 +46,18 @@
 
     <main class="member-main">
       <section class="hero-card">
-        <p class="eyebrow">Acesso privado</p>
-        <h1>Área do morador</h1>
+        <p class="eyebrow">Área do morador</p>
+        <h1>Seus avisos</h1>
         <p>
-          Use o telefone cadastrado e o código privado recebido no momento do cadastro para
-          consultar seus dados e alertas.
+          Entre com o telefone cadastrado e seu código de acesso.
         </p>
       </section>
 
       <section class="access-card" aria-labelledby="member-access-title">
         <div>
           <p class="eyebrow">Entrar</p>
-          <h2 id="member-access-title">Telefone + código</h2>
-          <p>
-            O código é exibido apenas uma vez após o cadastro. Nesta versão MVP, não há recuperação
-            automática de código.
-          </p>
+          <h2 id="member-access-title">Entrar</h2>
+          <p>Você recebeu este código ao confirmar o cadastro.</p>
         </div>
 
         <form id="member-access-form" class="access-form">
@@ -106,7 +102,7 @@
       <section id="member-panel" class="member-panel" hidden>
         <div class="panel-grid">
           <article class="panel">
-            <p class="eyebrow">Cadastro</p>
+            <p class="eyebrow">Seu endereço</p>
             <h2 id="member-name">—</h2>
             <dl class="details-list">
               <div>
@@ -129,31 +125,31 @@
           </article>
 
           <article class="panel">
-            <p class="eyebrow">Alertas</p>
-            <h2>Últimos avisos</h2>
+            <p class="eyebrow">Avisos</p>
+            <h2>Avisos para você</h2>
             <div id="member-notifications" class="notifications-list" aria-live="polite"></div>
           </article>
 
           <article class="panel danger-panel">
             <p class="eyebrow">Privacidade</p>
-            <h2>Excluir cadastro</h2>
-            <p>Esta ação remove permanentemente seu cadastro, endereço e histórico de alertas.</p>
+            <h2>Excluir meus dados</h2>
+            <p>Isso apaga seu cadastro, endereço e histórico de avisos.</p>
             <button id="open-delete-member" class="button button-danger" type="button">
               Excluir meus dados
             </button>
             <div id="delete-member-confirmation" class="delete-confirmation" hidden>
-              <p><strong>Esta ação não pode ser desfeita.</strong> Confirme novamente para continuar.</p>
+              <p><strong>Esta ação não pode ser desfeita.</strong> Confirme para continuar.</p>
               <label>
                 Código privado
                 <input id="delete-access-code" type="password" autocomplete="one-time-code" />
               </label>
               <label class="confirmation-check">
                 <input id="delete-member-check" type="checkbox" />
-                Entendo que meus dados serão excluídos permanentemente.
+                Entendo que esta ação não pode ser desfeita.
               </label>
               <div class="form-actions">
                 <button id="confirm-delete-member" class="button button-danger" type="button" disabled>
-                  Confirmar exclusão definitiva
+                  Excluir cadastro e dados
                 </button>
                 <button id="cancel-delete-member" class="button button-secondary" type="button">
                   Cancelar

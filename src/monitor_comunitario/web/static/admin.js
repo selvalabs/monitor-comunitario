@@ -145,7 +145,7 @@ function renderRunsTable(runs) {
   clearTable(elements.runsTableBody);
 
   if (!runs.length) {
-    appendTableMessage(elements.runsTableBody, 6, "Nenhuma execução registrada.");
+    appendTableMessage(elements.runsTableBody, 6, "Nenhuma coleta registrada.");
     return;
   }
 
@@ -248,7 +248,7 @@ function renderHermesEventsTable(events) {
 }
 
 async function refreshDashboard() {
-  setStatus("Atualizando dados operacionais...");
+  setStatus("Atualizando dados...");
 
   const [health, readiness] = await Promise.all([fetchJson("/health"), fetchJson("/ready")]);
   renderHealth(health);
@@ -265,7 +265,7 @@ async function refreshDashboard() {
   renderRunsTable(runs);
   renderUsersTable(users);
   renderHermesEventsTable(hermesEvents);
-  setStatus("Dashboard atualizado com sucesso.", "success");
+  setStatus("Dados atualizados.", "success");
 }
 
 async function approveUser(userId) {

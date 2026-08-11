@@ -77,7 +77,7 @@ async function verifyEmail(email, otp) {
   });
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body.detail || "Não foi possível confirmar o e-mail.");
+    throw new Error(body.detail || "Não foi possível confirmar o e-mail agora.");
   }
   return body;
 }
@@ -93,7 +93,7 @@ async function createUser(payload) {
   const body = await response.json();
 
   if (!response.ok) {
-    throw new Error(body.detail || "Não foi possível salvar o cadastro.");
+    throw new Error(body.detail || "Não foi possível concluir agora. Tente novamente em alguns minutos.");
   }
 
   return body;
@@ -114,7 +114,7 @@ async function copyAccessCode() {
 
   try {
     await navigator.clipboard.writeText(latestAccessCode);
-    setStatus("Código copiado. Guarde-o em um local seguro.");
+    setStatus("Código copiado. Guarde-o para entrar na área do morador.");
   } catch {
     setStatus(`Copie manualmente seu código: ${latestAccessCode}`);
   }
@@ -319,7 +319,7 @@ function showConsentBanner(force = false) {
     }
 
     consentBannerText.textContent =
-      "No momento, usamos apenas armazenamento local necessário para lembrar preferências.";
+      "No momento, usamos apenas o necessário para lembrar suas preferências.";
     consentPreferences.hidden = true;
     saveConsentButton.hidden = true;
     customizeConsentButton.hidden = true;
@@ -330,10 +330,10 @@ function showConsentBanner(force = false) {
   }
 
   consentBannerText.textContent =
-    "Ads e analytics só serão carregados conforme sua escolha.";
+    "Usamos o necessário para manter seu cadastro e suas preferências. Publicidade e análises são opcionais.";
   customizeConsentButton.hidden = false;
   rejectConsentButton.hidden = false;
-  acceptConsentButton.textContent = "Aceitar";
+  acceptConsentButton.textContent = "Aceitar opcionais";
   consentBanner.classList.add("is-visible");
 }
 
@@ -394,7 +394,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  setStatus("Salvando cadastro...");
+  setStatus("Enviando cadastro...");
   accessCodePanel.hidden = true;
 
   try {
@@ -403,7 +403,7 @@ form.addEventListener("submit", async (event) => {
       verificationEmail.value = payload.email;
       emailVerificationPanel.hidden = false;
       emailVerificationPanel.focus();
-      setStatus("Confira seu e-mail e informe o código recebido. Depois, confirme o telefone pelo WhatsApp.");
+      setStatus("Enviamos um código para seu e-mail. Confirme-o para continuar.");
       form.reset();
       return;
     }
@@ -413,7 +413,7 @@ form.addEventListener("submit", async (event) => {
     showAccessCodePanel(accessCode);
 
     setStatus(
-      "Cadastro salvo. Copie seu código privado e use-o com seu telefone na área do morador.",
+      "Cadastro confirmado. Guarde seu código de acesso para entrar na área do morador.",
     );
     form.reset();
   } catch (error) {
