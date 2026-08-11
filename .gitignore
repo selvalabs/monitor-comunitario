@@ -57,3 +57,6 @@ tools/diagnose_*.py
 
 # Local brainstorming companion
 .superpowers/
+
+# Local Git worktrees
+.worktrees/
