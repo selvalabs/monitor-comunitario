@@ -27,10 +27,14 @@ def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
     assert response.status_code == 200
     assert 'class="path-panel path-panel-primary"' in response.text
     assert 'class="path-panel path-panel-secondary"' in response.text
-    assert "Cadastrar um endereço" in response.text
-    assert "Entrar com telefone e código privado" in response.text
+    assert "Cadastre seu endereço" in response.text
+    assert "Entre com seu telefone e código de acesso" in response.text
+    assert "Saiba sobre desligamentos programados perto de você." in response.text
+    assert "Confirme seu e-mail" in response.text
+    assert "cruzamento com bairro e rua" not in response.text
     assert "consulta por ID" not in response.text
-    assert "Use este código junto com seu telefone" in response.text
+    assert "Use este código com seu telefone" in response.text
+    assert "Usar apenas o necessário" in response.text
     assert "access-code-panel" in response.text
 
 
@@ -44,6 +48,7 @@ def test_public_javascript_preserves_registration_and_access_code_contract() -> 
     assert "pending_email_verification" in response.text
     assert "/users/verify-email" in response.text
     assert "accessCodePanel.focus()" in response.text
+    assert "Aceitar opcionais" in response.text
 
 
 def test_static_stylesheet_is_served() -> None:

@@ -17,7 +17,7 @@
           <span class="brand-mark" aria-hidden="true">MC</span>
           <span>
             <strong>Monitor Comunitário</strong>
-            <small>avisos públicos de energia</small>
+            <small>avisos de desligamentos programados</small>
           </span>
         </a>
 
@@ -49,39 +49,35 @@
     <main>
       <section class="hero">
         <div class="hero-content">
-          <p class="eyebrow">Alertas comunitários</p>
-          <h1>Saiba quando há desligamento programado perto do seu endereço.</h1>
+          <p class="eyebrow">Avisos da sua região</p>
+          <h1>Saiba sobre desligamentos programados perto de você.</h1>
           <p class="hero-copy">
-            Escolha um caminho: cadastre um novo endereço para receber alertas na área do
-            morador, ou entre com seu telefone e código privado para consultar avisos já
-            encontrados.
+            Cadastre seu endereço para receber avisos. Se já tem cadastro, entre para consultar
+            seus avisos.
           </p>
 
           <div class="path-grid" aria-label="Caminhos principais">
             <article class="path-panel path-panel-primary">
               <span class="path-label">Novo cadastro</span>
-              <h2>Cadastrar um endereço</h2>
+              <h2>Cadastre seu endereço</h2>
               <p>
-                Informe telefone, município e endereço. Depois guarde o código privado exibido
-                uma única vez.
+                Informe seu endereço e confirme seu e-mail e WhatsApp.
               </p>
-              <a class="button button-primary" href="#cadastro" data-i18n="button.register_now">Cadastrar agora</a>
+              <a class="button button-primary" href="#cadastro" data-i18n="button.register_now">Cadastrar endereço</a>
             </article>
 
             <article class="path-panel path-panel-secondary">
               <span class="path-label">Já tenho cadastro</span>
-              <h2>Entrar com telefone e código privado</h2>
+              <h2>Veja seus avisos</h2>
               <p>
-                Use a área do morador para consultar seus dados e possíveis alertas ligados ao
-                endereço cadastrado.
+                Entre com seu telefone e código de acesso.
               </p>
-              <a class="button button-secondary" href="/member" data-i18n="button.member_area">Acessar área do morador</a>
+              <a class="button button-secondary" href="/member" data-i18n="button.member_area">Entrar</a>
             </article>
           </div>
 
           <p class="disclaimer">
-            Este é um monitor comunitário independente. As informações oficiais continuam sendo da
-            Celesc e podem sofrer alteração ou cancelamento.
+            Este é um serviço independente. Consulte a Celesc para informações oficiais e atualizadas.
           </p>
         </div>
 
@@ -100,20 +96,20 @@
       <section class="cards" aria-label="Resumo do serviço">
         <article class="info-card">
           <span class="card-number">01</span>
-          <h2>Cadastro simples</h2>
-          <p>Nome, telefone, município, bairro e rua. Sem CPF, CNPJ ou unidade consumidora.</p>
+          <h2>Informe seu endereço</h2>
+          <p>Pedimos apenas os dados necessários para localizar sua região.</p>
         </article>
 
         <article class="info-card">
           <span class="card-number">02</span>
-          <h2>Código privado</h2>
-          <p>Após o cadastro, guarde o código exibido uma única vez para acessar sua área.</p>
+          <h2>Confirme seus contatos</h2>
+          <p>Confirme o e-mail e responda à mensagem enviada no WhatsApp.</p>
         </article>
 
         <article class="info-card">
           <span class="card-number">03</span>
-          <h2>Área do morador</h2>
-          <p>Acesse seus dados e alertas usando telefone cadastrado + código privado.</p>
+          <h2>Acompanhe seus avisos</h2>
+          <p>Use seu telefone e código de acesso para entrar quando quiser.</p>
         </article>
       </section>
 
@@ -121,10 +117,9 @@
         <div class="panel">
           <div class="section-heading">
             <p class="eyebrow">Cadastro</p>
-            <h2>Receber alertas do meu endereço</h2>
+            <h2>Cadastre seu endereço</h2>
             <p>
-              Preencha os dados abaixo. Quanto mais específico o endereço, melhor o cruzamento com
-              bairro e rua.
+              Informe os dados do local onde você quer receber avisos.
             </p>
           </div>
 
@@ -188,7 +183,7 @@
                 type="checkbox"
                 checked
               />
-              <span>Também quero receber alertas amplos do município quando bairro/rua não forem claros.</span>
+              <span>Também quero receber avisos gerais do município quando o endereço do aviso não estiver detalhado.</span>
             </label>
 
             <label class="checkbox checkbox-required">
@@ -199,13 +194,14 @@
               </span>
             </label>
 
-            <button class="button button-primary" type="submit">Salvar cadastro</button>
+            <button class="button button-primary" type="submit">Continuar</button>
 
             <p id="form-status" class="status-message" role="status"></p>
 
             <div id="email-verification-panel" class="access-code-panel" tabindex="-1" hidden>
-              <p class="eyebrow">Confirmação por e-mail</p>
-              <h3>Digite o código recebido por e-mail</h3>
+              <p class="eyebrow">Confirmação</p>
+              <h3>Confirme seu e-mail</h3>
+              <p>Digite o código enviado para seu e-mail. Ele vale por 48 horas.</p>
               <label>
                 E-mail
                 <input id="verification-email" type="email" autocomplete="email" />
@@ -217,11 +213,10 @@
               <button id="verify-email-button" class="button button-primary" type="button">Confirmar e-mail</button>
             </div>
             <div id="access-code-panel" class="access-code-panel" tabindex="-1" hidden>
-              <p class="eyebrow">Código privado</p>
-              <h3>Guarde este código para acessar seus alertas</h3>
+              <p class="eyebrow">Acesso</p>
+              <h3>Guarde seu código de acesso</h3>
               <p>
-                Ele aparece apenas uma vez. Use este código junto com seu telefone para entrar na
-                área do morador.
+                Use este código com seu telefone para entrar na área do morador. Ele aparece apenas agora.
               </p>
 
               <div class="access-code-box">
@@ -249,11 +244,8 @@
           </div>
 
           <div class="mini-panel">
-            <h2>Já tenho cadastro</h2>
-            <p>
-              A consulta de alertas é feita pela área do morador, usando telefone cadastrado e
-              código privado.
-            </p>
+            <h2>Já se cadastrou?</h2>
+            <p>Entre para ver seus dados e avisos.</p>
             <a class="button button-secondary" href="/member" data-i18n="button.member_area">Entrar na área do morador</a>
           </div>
         </aside>
@@ -262,25 +254,25 @@
       <section id="como-funciona" class="how-it-works">
         <div class="section-heading">
           <p class="eyebrow">Como funciona</p>
-          <h2>Da página pública ao alerta comunitário</h2>
+          <h2>Como o serviço funciona</h2>
         </div>
 
         <ol class="steps">
           <li>
-            <strong>Coleta</strong>
-            <span>O sistema consulta os avisos públicos de desligamento programado.</span>
+            <strong>Buscamos avisos públicos</strong>
+            <span>Consultamos os avisos de desligamento programado publicados pela Celesc.</span>
           </li>
           <li>
-            <strong>Persistência</strong>
-            <span>Cada aviso é salvo com hash para evitar duplicidade.</span>
+            <strong>Localizamos sua região</strong>
+            <span>Comparamos o local informado no aviso com o endereço cadastrado.</span>
           </li>
           <li>
-            <strong>Cruzamento</strong>
-            <span>Município, bairro e rua são comparados com os cadastros.</span>
+            <strong>Mostramos os avisos</strong>
+            <span>Os avisos encontrados ficam disponíveis na sua área.</span>
           </li>
           <li>
-            <strong>Notificação</strong>
-            <span>Alertas aparecem na área do morador e podem evoluir para WhatsApp depois.</span>
+            <strong>Você acompanha</strong>
+            <span>Entre quando quiser para consultar seus dados e avisos.</span>
           </li>
         </ol>
       </section>
@@ -297,7 +289,7 @@
     </main>
 
     <footer class="footer">
-      <p>Monitor Comunitário Celesc — projeto independente de monitoramento público.</p>
+      <p>Monitor Comunitário: avisos públicos de desligamentos programados.</p>
       <nav class="footer-links" aria-label="Links legais">
         <a href="/privacidade">Privacidade</a>
         <a href="/termos">Termos</a>
@@ -316,24 +308,24 @@
       aria-label="Preferências de privacidade"
     >
       <div class="consent-copy">
-        <strong>Privacidade</strong>
+        <strong>Sua privacidade</strong>
         <p id="consent-banner-text">
-          Ads e analytics só serão carregados conforme sua escolha.
+          Usamos o necessário para manter seu cadastro e suas preferências. Publicidade e análises são opcionais.
         </p>
 
         <button id="customize-consent" class="consent-link" type="button">
-          Opções
+          Escolher preferências
         </button>
 
         <div id="consent-preferences" class="consent-preferences" hidden>
           <label class="checkbox">
             <input type="checkbox" checked disabled />
-            <span>Necessários: cadastro, área do morador e preferências.</span>
+            <span>Necessários para o funcionamento do site.</span>
           </label>
 
           <label class="checkbox">
             <input id="consent-analytics" type="checkbox" />
-            <span>Analytics.</span>
+            <span>Análises para melhorar o serviço.</span>
           </label>
 
           <label class="checkbox">
@@ -345,10 +337,10 @@
 
       <div class="consent-banner-actions">
         <button id="reject-consent" class="button button-secondary" type="button">
-          Recusar
+          Usar apenas o necessário
         </button>
         <button id="accept-consent" class="button button-primary" type="button">
-          Aceitar
+          Aceitar opcionais
         </button>
         <button id="save-consent" class="button button-primary" type="button" hidden>
           Salvar
