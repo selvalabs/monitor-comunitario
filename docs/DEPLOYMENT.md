@@ -246,6 +246,18 @@ If the database is unavailable, `/ready` returns `503`.
 
 The production compose file uses `/ready` as the API container healthcheck.
 
+## Internal integration API
+
+`api` is the only Monitor service exposed through Traefik. `api-internal` has
+no Traefik labels or published port and serves only `/internal/*` contracts.
+The email tunnel targets `api-internal`, and Compose forces the Monitor
+Telegram bot to call `http://api-internal:8000`.
+
+During the controlled rollout, attach only `hermes-monitor-comunitario` to the
+named `monitor_internal` network before changing its dispatcher base URL to
+`http://api-internal:8000`. Do not attach unrelated VPS containers. HMAC and
+service-secret checks remain mandatory on every internal route.
+
 ### Admin diagnostics
 
 ```text
@@ -364,7 +376,7 @@ Required protected environment values are:
 
 ```text
 MONITOR_BOT_API_KEY=<dedicated-monitor-bot-api-key>
-MONITOR_BOT_API_URL=http://monitor-comunitario-api:8000
+MONITOR_BOT_API_URL=http://api-internal:8000
 MONITOR_TELEGRAM_ENABLED=true
 MONITOR_TELEGRAM_BOT_TOKEN=<telegram-bot-token>
 MONITOR_TELEGRAM_ALLOWED_USER_IDS=<comma-separated-telegram-user-ids>

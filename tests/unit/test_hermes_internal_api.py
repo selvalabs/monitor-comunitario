@@ -3,7 +3,7 @@ from collections.abc import Generator
 import pytest
 from fastapi.testclient import TestClient
 
-from monitor_comunitario.api.main import app
+from monitor_comunitario.api.internal import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import HermesEvent, HermesEventStatus
 from monitor_comunitario.db.session import SessionLocal

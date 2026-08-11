@@ -4,5 +4,5 @@ no-autoupdate: true
 ingress:
   - hostname: monitor-email-ingress.soberania.cloud
     path: ^/internal/email/inbound$
-    service: http://api:8000
+    service: http://api-internal:8000
   - service: http_status:404

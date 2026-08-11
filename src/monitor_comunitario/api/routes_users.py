@@ -39,6 +39,7 @@ from monitor_comunitario.services.rate_limit import (
 from monitor_comunitario.services.request_context import get_client_ip
 
 router = APIRouter(prefix="/users", tags=["users"])
+hermes_callback_router = APIRouter(prefix="/users", tags=["internal", "hermes"])
 admin_router = APIRouter(
     prefix="/admin/users",
     tags=["admin", "users"],
@@ -348,7 +349,7 @@ def resend_pending_registration_email(
     return _pending_registration_read(pending)
 
 
-@router.post("/internal/hermes/phone-confirmation", include_in_schema=False)
+@hermes_callback_router.post("/internal/hermes/phone-confirmation", include_in_schema=False)
 def hermes_phone_confirmation(
     payload: dict[str, Any],
     request: Request,

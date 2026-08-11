@@ -6,6 +6,10 @@ Nao use como log bruto. Nao registre segredos, dados pessoais ou estado volatil 
 
 ## Estado atual
 
+- Issue `#140`: separação local entre API pública e `api-internal` em andamento.
+  O deploy permanece pendente de autorização e deve tocar somente o Monitor e
+  `hermes-monitor-comunitario`.
+
 - Revisão editorial em andamento na issue `#130` na branch `feat/product-copy`.
 - Escopo: copy em português da home, cadastro, consentimento, e-mail/WhatsApp de confirmação,
   área do morador, admin e páginas legais; sem mudança de rotas, dados, autenticação ou entrega.

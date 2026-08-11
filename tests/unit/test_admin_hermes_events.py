@@ -4,6 +4,7 @@ import pytest
 from admin_test_helpers import admin_session_headers
 from fastapi.testclient import TestClient
 
+from monitor_comunitario.api.internal import app as internal_app
 from monitor_comunitario.api.main import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
@@ -55,10 +56,11 @@ def test_monitor_bot_receives_redacted_registration_events_only(
         )
         session.commit()
 
-    response = client.get(
-        "/internal/monitor-bot/registration-events",
-        headers={"X-Monitor-Bot-Key": "dedicated-bot-key"},
-    )
+    with TestClient(internal_app) as internal_client:
+        response = internal_client.get(
+            "/internal/monitor-bot/registration-events",
+            headers={"X-Monitor-Bot-Key": "dedicated-bot-key"},
+        )
 
     assert response.status_code == 200
     body = response.json()
