@@ -99,15 +99,15 @@ def get_pending_registration_store() -> PendingRegistrationStore | None:
 def send_verification_email(*, email: str, otp: str) -> str | None:
     settings = get_settings()
     message = EmailMessage()
-    message["Subject"] = "Confirme seu cadastro no Monitor Comunitario"
+    message["Subject"] = "Confirme seu cadastro no Monitor Comunitário"
     message["From"] = settings.email_from
     message["To"] = email
     message.set_content(
-        "Seu codigo de confirmacao do Monitor Comunitario e: "
+        "Use este código para confirmar seu e-mail: "
         + otp
-        + "\n\nEle expira em "
+        + "\n\nEle vale por "
         + format_expiration(settings.email_verification_ttl_seconds)
-        + "."
+        + ". Se você não iniciou este cadastro, ignore esta mensagem."
     )
 
     if settings.email_provider.lower() == "brevo":

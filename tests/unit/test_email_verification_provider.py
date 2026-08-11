@@ -59,5 +59,7 @@ def test_brevo_provider_returns_message_id(
     assert FakeClient.requests[0]["url"] == "https://api.brevo.com/v3/smtp/email"
     assert FakeClient.requests[0]["headers"]["api-key"] == "test-brevo-key"
     assert FakeClient.requests[0]["json"]["to"] == [{"email": "resident@example.com"}]
+    assert FakeClient.requests[0]["json"]["subject"] == "Confirme seu cadastro no Monitor Comunitário"
     assert "123456" in FakeClient.requests[0]["json"]["textContent"]
     assert "48 horas" in FakeClient.requests[0]["json"]["textContent"]
+    assert "Se você não iniciou este cadastro, ignore esta mensagem." in FakeClient.requests[0]["json"]["textContent"]
