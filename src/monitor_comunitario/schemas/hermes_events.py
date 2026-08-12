@@ -58,3 +58,9 @@ class HermesEventDeliveryUpdate(BaseModel):
 
     status: Literal["processed", "failed"]
     error_message: str = ""
+
+
+class HermesDeliverySecretRead(BaseModel):
+    """One-time secret fetched by Hermes for a completion event."""
+
+    access_code: str

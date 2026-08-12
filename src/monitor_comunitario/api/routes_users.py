@@ -1,9 +1,11 @@
 import hmac
 import time
 from datetime import UTC, datetime
+from html import escape
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -12,7 +14,6 @@ from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import User
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.users import (
-    EmailVerificationRequest,
     PendingRegistrationAdminRead,
     PendingRegistrationResendRequest,
     RegistrationPendingRead,
@@ -23,13 +24,24 @@ from monitor_comunitario.schemas.users import (
 )
 from monitor_comunitario.services.email_verification import (
     EmailVerificationUnavailable,
-    generate_otp,
+    generate_confirmation_token,
     get_pending_registration_store,
-    hash_otp,
+    hash_token,
     normalize_email,
+    send_confirmation_link_email,
+)
+from monitor_comunitario.services.ephemeral_delivery import (
+    DELIVERY_TTL_SECONDS,
+    EphemeralDeliveryUnavailable,
+    generate_delivery_reference,
+    get_ephemeral_delivery_store,
 )
 from monitor_comunitario.services.hermes_events import create_hermes_event
 from monitor_comunitario.services.member_access import generate_access_code, hash_access_code
+from monitor_comunitario.services.phone_confirmation import (
+    PhoneConfirmationDecision,
+    classify_reply,
+)
 from monitor_comunitario.services.rate_limit import (
     RateLimitExceeded,
     RateLimitUnavailable,
@@ -62,7 +74,13 @@ def _normalize_phone(value: str) -> str:
     return "".join(character for character in value if character.isdigit())
 
 
-def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User, str]:
+def _create_verified_user(
+    session: Session,
+    data: dict[str, Any],
+    *,
+    commit: bool = True,
+    create_approval_event: bool = True,
+) -> tuple[User, str]:
     access_code = generate_access_code()
     user_data = {
         key: value
@@ -75,6 +93,7 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
             "email_verified",
             "email_delivery_id",
             "email_last_sent_at",
+            "confirmation_token_hash",
         }
     }
     user = User(
@@ -83,9 +102,8 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
         access_code_created_at=utc_now(),
     )
     session.add(user)
-    session.commit()
-    session.refresh(user)
-    if not user.notifications_approved:
+    session.flush()
+    if create_approval_event and not user.notifications_approved:
         create_hermes_event(
             session=session,
             event_type="admin_approval_pending",
@@ -99,6 +117,9 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
                 "neighborhood": user.neighborhood,
             },
         )
+    if commit:
+        session.commit()
+        session.refresh(user)
     return user, access_code
 
 
@@ -160,26 +181,24 @@ def create_user(
             detail="Registration verification is temporarily unavailable.",
         )
     phone = _normalize_phone(payload.phone)
-    otp = generate_otp()
+    confirmation_token = generate_confirmation_token()
+    token_hash = hash_token(confirmation_token)
     pending = {
         **payload.model_dump(exclude={"email", "phone"}),
         "email": email,
         "phone": phone,
-        "otp_hash": hash_otp(otp),
-        "attempts": 0,
+        "confirmation_token_hash": token_hash,
         "email_verified": False,
     }
     try:
-        store.save(email, phone, pending, settings.email_verification_ttl_seconds)
-        from monitor_comunitario.services.email_verification import send_verification_email
-
-        delivery_id = send_verification_email(email=email, otp=otp)
+        confirmation_url = f"{settings.email_confirmation_url}?token={confirmation_token}"
+        delivery_id = send_confirmation_link_email(email=email, confirmation_url=confirmation_url)
         pending["email_last_sent_at"] = time.time()
         if delivery_id:
             pending["email_delivery_id"] = delivery_id
-        store.save(email, phone, pending, settings.email_verification_ttl_seconds)
+        store.save(email, phone, pending, settings.email_verification_ttl_seconds, token_hash)
     except EmailVerificationUnavailable as error:
-        store.delete(email, phone)
+        store.delete(email, phone, token_hash)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Registration verification is temporarily unavailable.",
@@ -188,18 +207,13 @@ def create_user(
     return RegistrationPendingRead(message="Confira seu e-mail para continuar o cadastro.")
 
 
-@router.post("/verify-email", response_model=RegistrationPendingRead)
-def verify_email(
-    payload: EmailVerificationRequest,
-    session: SessionDep,
-) -> RegistrationPendingRead:
-    """Verify email OTP and enqueue the deterministic WhatsApp confirmation for Hermes."""
+def _confirm_email_token(token: str, session: Session) -> RegistrationPendingRead:
+    """Verify a one-time email link and enqueue WhatsApp confirmation for Hermes."""
     settings = get_settings()
     if not settings.email_verification_enabled:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Email verification is disabled."
         )
-    email = normalize_email(payload.email)
     store = get_pending_registration_store()
     if store is None:
         raise HTTPException(
@@ -207,7 +221,8 @@ def verify_email(
             detail="Registration verification is temporarily unavailable.",
         )
     try:
-        pending = store.load(email)
+        token_hash = hash_token(token)
+        pending = store.load_by_token_hash(token_hash)
     except EmailVerificationUnavailable as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -218,19 +233,14 @@ def verify_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Verification request expired or not found.",
         )
-    if pending.get("attempts", 0) >= settings.email_verification_max_attempts:
-        store.delete(email, pending["phone"])
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many verification attempts."
-        )
-    if not hmac.compare_digest(str(pending.get("otp_hash", "")), hash_otp(payload.otp)):
-        pending["attempts"] = int(pending.get("attempts", 0)) + 1
-        store.save(email, pending["phone"], pending, settings.email_verification_ttl_seconds)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification code."
-        )
     pending["email_verified"] = True
-    store.save(email, pending["phone"], pending, settings.phone_confirmation_ttl_seconds)
+    store.delete(str(pending["email"]), str(pending["phone"]), token_hash)
+    store.save(
+        str(pending["email"]),
+        str(pending["phone"]),
+        pending,
+        settings.phone_confirmation_ttl_seconds,
+    )
     create_hermes_event(
         session=session,
         event_type="member_phone_confirmation_requested",
@@ -248,6 +258,24 @@ def verify_email(
         status="pending_phone_verification",
         message="E-mail confirmado. Responda OK à mensagem no WhatsApp para ativar o cadastro.",
     )
+
+
+@router.get("/verify-email", response_class=HTMLResponse, include_in_schema=False)
+def verify_email_link(token: str, session: SessionDep) -> HTMLResponse:
+    """Show a confirmation page without consuming the token on link scanners."""
+    if not token or len(token) > 200:
+        return HTMLResponse("<h1>Link de confirmação inválido</h1>", status_code=400)
+    return HTMLResponse(
+        "<h1>Confirme seu e-mail</h1>"
+        "<p>Clique no botão abaixo para confirmar seu cadastro.</p>"
+        f'<form method="post" action="/users/verify-email?token={escape(token, quote=True)}">'
+        '<button type="submit">Confirmar meu e-mail</button></form>'
+    )
+
+
+@router.post("/verify-email", response_model=RegistrationPendingRead)
+def verify_email(token: str, session: SessionDep) -> RegistrationPendingRead:
+    return _confirm_email_token(token, session)
 
 
 def _pending_registration_read(payload: dict[str, Any]) -> PendingRegistrationAdminRead:
@@ -325,20 +353,24 @@ def resend_pending_registration_email(
             headers={"Retry-After": str(retry_after)},
         )
 
-    otp = generate_otp()
-    pending["otp_hash"] = hash_otp(otp)
+    confirmation_token = generate_confirmation_token()
+    token_hash = hash_token(confirmation_token)
+    previous_token_hash = str(pending.get("confirmation_token_hash", ""))
     pending["attempts"] = 0
     try:
-        from monitor_comunitario.services.email_verification import send_verification_email
-
-        delivery_id = send_verification_email(email=email, otp=otp)
+        confirmation_url = f"{settings.email_confirmation_url}?token={confirmation_token}"
+        delivery_id = send_confirmation_link_email(email=email, confirmation_url=confirmation_url)
         pending["email_last_sent_at"] = time.time()
         pending["email_delivery_id"] = delivery_id or ""
+        pending["confirmation_token_hash"] = token_hash
+        if previous_token_hash:
+            store.delete(email, str(pending["phone"]), previous_token_hash)
         store.save(
             email,
             str(pending["phone"]),
             pending,
             settings.email_verification_ttl_seconds,
+            token_hash,
         )
     except EmailVerificationUnavailable as error:
         raise HTTPException(
@@ -366,21 +398,59 @@ def hermes_phone_confirmation(
         )
 
     phone = _normalize_phone(str(payload.get("phone", "")))
-    reply = str(payload.get("reply", "")).strip().upper()
+    decision = classify_reply(str(payload.get("reply", "")))
     store = get_pending_registration_store()
     if store is None or not phone:
         return {"status": "ignored"}
     pending = store.load_by_phone(phone)
     if pending is None or not pending.get("email_verified"):
         return {"status": "ignored"}
-    if reply == "CANCELAR":
+    if decision is PhoneConfirmationDecision.CANCELLED:
         store.delete(pending["email"], phone)
         return {"status": "cancelled"}
-    if reply != "OK":
-        return {"status": "ignored"}
+    if decision is PhoneConfirmationDecision.AMBIGUOUS:
+        return {"status": "ambiguous"}
 
-    user, access_code = _create_verified_user(session, pending)
+    user, access_code = _create_verified_user(
+        session,
+        pending,
+        commit=False,
+        create_approval_event=False,
+    )
+    delivery_reference = generate_delivery_reference()
+    delivery_store = get_ephemeral_delivery_store()
+    if delivery_store is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Initial access delivery is temporarily unavailable.",
+        )
+    try:
+        delivery_store.save(
+            delivery_reference,
+            {"access_code": access_code},
+            DELIVERY_TTL_SECONDS,
+        )
+    except EphemeralDeliveryUnavailable as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Initial access delivery is temporarily unavailable.",
+        ) from error
     store.delete(pending["email"], phone)
+    if not user.notifications_approved:
+        create_hermes_event(
+            session=session,
+            event_type="admin_approval_pending",
+            channel="admin",
+            recipient_phone="",
+            intent="UNKNOWN_ESCALATE",
+            template_key="human_escalation_v1",
+            payload={
+                "user_id": user.id,
+                "municipality": user.municipality,
+                "neighborhood": user.neighborhood,
+            },
+        )
     create_hermes_event(
         session=session,
         event_type="member_phone_confirmation_completed",
@@ -388,7 +458,11 @@ def hermes_phone_confirmation(
         recipient_phone=phone,
         intent="ACCESS_MEMBER_AREA",
         template_key="member_access_code_v1",
-        payload={"name": user.name, "access_code": access_code, "url": settings.member_area_url},
+        payload={
+            "name": user.name,
+            "access_code_ref": delivery_reference,
+            "url": settings.member_area_url,
+        },
     )
     return {"status": "confirmed"}
 

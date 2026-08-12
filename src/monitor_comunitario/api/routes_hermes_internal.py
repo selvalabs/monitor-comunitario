@@ -10,8 +10,13 @@ from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.models import HermesEvent, HermesEventStatus, utc_now
 from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.hermes_events import (
+    HermesDeliverySecretRead,
     HermesEventDeliveryRead,
     HermesEventDeliveryUpdate,
+)
+from monitor_comunitario.services.ephemeral_delivery import (
+    EphemeralDeliveryUnavailable,
+    get_ephemeral_delivery_store,
 )
 
 router = APIRouter(prefix="/internal/hermes", tags=["internal", "hermes"])
@@ -127,3 +132,30 @@ def acknowledge_hermes_event(
     session.refresh(event)
     return _to_delivery_event(event)
 
+
+@router.post(
+    "/events/{event_id}/access-code",
+    response_model=HermesDeliverySecretRead,
+    dependencies=[Depends(require_hermes_event_secret)],
+)
+def consume_access_code(event_id: int, session: SessionDep) -> HermesDeliverySecretRead:
+    """Consume the initial member password for one delivery only."""
+    event = session.get(HermesEvent, event_id)
+    if event is None or event.event_type != "member_phone_confirmation_completed":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hermes event not found.")
+    try:
+        payload = json.loads(event.payload_json)
+        reference = str(payload.get("access_code_ref", ""))
+        store = get_ephemeral_delivery_store()
+        secret = store.consume(reference) if store and reference else None
+    except (EphemeralDeliveryUnavailable, json.JSONDecodeError, TypeError, ValueError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="One-time delivery secret is temporarily unavailable.",
+        ) from error
+    if not secret or not secret.get("access_code"):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Access code unavailable.",
+        )
+    return HermesDeliverySecretRead(access_code=str(secret["access_code"]))

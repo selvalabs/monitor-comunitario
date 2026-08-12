@@ -4,9 +4,6 @@ const accessCodePanel = document.querySelector("#access-code-panel");
 const accessCodeValue = document.querySelector("#access-code-value");
 const copyAccessCodeButton = document.querySelector("#copy-access-code");
 const emailVerificationPanel = document.querySelector("#email-verification-panel");
-const verificationEmail = document.querySelector("#verification-email");
-const verificationOtp = document.querySelector("#verification-otp");
-const verifyEmailButton = document.querySelector("#verify-email-button");
 
 const consentBanner = document.querySelector("#consent-banner");
 const consentBannerText = document.querySelector("#consent-banner-text");
@@ -400,10 +397,9 @@ form.addEventListener("submit", async (event) => {
   try {
     const user = await createUser(payload);
     if (user.status === "pending_email_verification") {
-      verificationEmail.value = payload.email;
       emailVerificationPanel.hidden = false;
       emailVerificationPanel.focus();
-      setStatus("Enviamos um código para seu e-mail. Confirme-o para continuar.");
+      setStatus("Enviamos um link para seu e-mail. Clique nele para continuar.");
       form.reset();
       return;
     }
@@ -418,25 +414,6 @@ form.addEventListener("submit", async (event) => {
     form.reset();
   } catch (error) {
     setStatus(error.message, true);
-  }
-});
-
-verifyEmailButton?.addEventListener("click", async () => {
-  const email = verificationEmail.value.trim();
-  const otp = verificationOtp.value.trim();
-  if (!email || otp.length !== 6) {
-    setStatus("Informe o e-mail e o código de seis dígitos.", true);
-    return;
-  }
-  verifyEmailButton.disabled = true;
-  setStatus("Confirmando e-mail...");
-  try {
-    const result = await verifyEmail(email, otp);
-    emailVerificationPanel.hidden = true;
-    setStatus(result.message);
-  } catch (error) {
-    setStatus(error.message, true);
-    verifyEmailButton.disabled = false;
   }
 });
 

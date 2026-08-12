@@ -190,7 +190,6 @@ def test_email_and_whatsapp_verification_flow(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from monitor_comunitario.api import routes_users
-    from monitor_comunitario.services import email_verification
 
     class FakeStore:
         def __init__(self) -> None:
@@ -198,7 +197,12 @@ def test_email_and_whatsapp_verification_flow(
             self.ttls: list[int] = []
 
         def save(
-            self, email: str, phone: str, payload: dict[str, object], ttl_seconds: int
+            self,
+            email: str,
+            phone: str,
+            payload: dict[str, object],
+            ttl_seconds: int,
+            token_hash: str = "",
         ) -> None:
             self.ttls.append(ttl_seconds)
             self.values[email] = payload
@@ -210,9 +214,28 @@ def test_email_and_whatsapp_verification_flow(
         def load_by_phone(self, phone: str) -> dict[str, object] | None:
             return self.values.get(phone)
 
-        def delete(self, email: str, phone: str) -> None:
+        def load_by_token_hash(self, token_hash: str) -> dict[str, object] | None:
+            return next(
+                (
+                    value
+                    for value in self.values.values()
+                    if value.get("confirmation_token_hash") == token_hash
+                ),
+                None,
+            )
+
+        def delete(self, email: str, phone: str, token_hash: str = "") -> None:
             self.values.pop(email, None)
             self.values.pop(phone, None)
+
+    class FakeDeliveryStore:
+        def __init__(self) -> None:
+            self.values: dict[str, dict[str, object]] = {}
+
+        def save(self, reference: str, payload: dict[str, object], ttl_seconds: int) -> None:
+            self.values[reference] = payload
+
+    delivery_store = FakeDeliveryStore()
 
     store = FakeStore()
     delivered_emails: list[tuple[str, str]] = []
@@ -221,10 +244,13 @@ def test_email_and_whatsapp_verification_flow(
     get_settings.cache_clear()
 
     monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
+    monkeypatch.setattr(routes_users, "get_ephemeral_delivery_store", lambda: delivery_store)
     monkeypatch.setattr(
-        email_verification,
-        "send_verification_email",
-        lambda *, email, otp: (delivered_emails.append((email, otp)) or "<brevo-id@example.com>"),
+        routes_users,
+        "send_confirmation_link_email",
+        lambda *, email, confirmation_url: (
+            delivered_emails.append((email, confirmation_url)) or "<brevo-id@example.com>"
+        ),
     )
 
     registration = client.post(
@@ -240,10 +266,17 @@ def test_email_and_whatsapp_verification_flow(
     assert delivered_emails
     assert client.get("/admin/users").status_code == 401
 
-    verify_email = client.post(
-        "/users/verify-email",
-        json={"email": delivered_emails[0][0], "otp": delivered_emails[0][1]},
-    )
+    token = delivered_emails[0][1].split("token=", 1)[1]
+    preview = client.get("/users/verify-email", params={"token": token})
+    assert preview.status_code == 200
+    assert "Confirme seu e-mail" in preview.text
+    with SessionLocal() as session:
+        before_confirmation = session.query(HermesEvent).filter(
+            HermesEvent.event_type == "member_phone_confirmation_requested",
+            HermesEvent.recipient_phone == "5548999912345",
+        ).count()
+
+    verify_email = client.post("/users/verify-email", params={"token": token})
     assert verify_email.status_code == 200
     assert verify_email.json()["status"] == "pending_phone_verification"
 
@@ -259,6 +292,12 @@ def test_email_and_whatsapp_verification_flow(
     assert request_event.template_key == "member_phone_confirmation_v1"
     assert request_event.payload_json is not None
     assert '"phone_confirmation_ttl_hours":48' in request_event.payload_json
+    with SessionLocal() as session:
+        after_confirmation = session.query(HermesEvent).filter(
+            HermesEvent.event_type == "member_phone_confirmation_requested",
+            HermesEvent.recipient_phone == "5548999912345",
+        ).count()
+    assert after_confirmation == before_confirmation + 1
     assert store.ttls[-1] == 172800
 
     callback = client.post(
@@ -273,11 +312,12 @@ def test_email_and_whatsapp_verification_flow(
         completion_event = session.scalar(
             select(HermesEvent).where(
                 HermesEvent.event_type == "member_phone_confirmation_completed"
-            )
+            ).order_by(HermesEvent.id.desc())
         )
     assert completion_event is not None
     assert completion_event.template_key == "member_access_code_v1"
-    assert '"access_code"' in completion_event.payload_json
+    assert '"access_code"' not in completion_event.payload_json
+    assert '"access_code_ref"' in completion_event.payload_json
 
     access = client.post(
         "/member/access",
@@ -356,7 +396,6 @@ def test_admin_can_resend_confirmation_email_with_cooldown(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from monitor_comunitario.api import routes_users
-    from monitor_comunitario.services import email_verification
 
     class FakeStore:
         def __init__(self) -> None:
@@ -375,7 +414,12 @@ def test_admin_can_resend_confirmation_email_with_cooldown(
             return self.pending if email == self.pending["email"] else None
 
         def save(
-            self, email: str, phone: str, payload: dict[str, object], ttl_seconds: int
+            self,
+            email: str,
+            phone: str,
+            payload: dict[str, object],
+            ttl_seconds: int,
+            token_hash: str = "",
         ) -> None:
             self.pending = payload
 
@@ -386,9 +430,11 @@ def test_admin_can_resend_confirmation_email_with_cooldown(
     get_settings.cache_clear()
     monkeypatch.setattr(routes_users, "get_pending_registration_store", lambda: store)
     monkeypatch.setattr(
-        email_verification,
-        "send_verification_email",
-        lambda *, email, otp: (delivered.append((email, otp)) or "<new-id@example.com>"),
+        routes_users,
+        "send_confirmation_link_email",
+        lambda *, email, confirmation_url: (
+            delivered.append((email, confirmation_url)) or "<new-id@example.com>"
+        ),
     )
 
     response = client.post(

@@ -11,6 +11,7 @@ import redis
 from monitor_comunitario.core.config import get_settings
 
 OTP_LENGTH = 6
+TOKEN_BYTES = 32
 
 
 def normalize_email(value: str) -> str:
@@ -21,7 +22,15 @@ def generate_otp() -> str:
     return f"{secrets.randbelow(1_000_000):0{OTP_LENGTH}d}"
 
 
+def generate_confirmation_token() -> str:
+    return secrets.token_urlsafe(TOKEN_BYTES)
+
+
 def hash_otp(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def hash_token(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
@@ -45,11 +54,23 @@ class PendingRegistrationStore:
         digest = hashlib.sha256(value.encode("utf-8")).hexdigest()
         return f"monitor:registration:{digest}"
 
-    def save(self, email: str, phone: str, payload: dict[str, Any], ttl_seconds: int) -> None:
+    def _token_key(self, token_hash: str) -> str:
+        return f"monitor:registration-token:{token_hash}"
+
+    def save(
+        self,
+        email: str,
+        phone: str,
+        payload: dict[str, Any],
+        ttl_seconds: int,
+        token_hash: str = "",
+    ) -> None:
         try:
             serialized = json.dumps(payload)
             self._client.setex(self._key(email), ttl_seconds, serialized)
             self._client.setex(self._key(phone), ttl_seconds, serialized)
+            if token_hash:
+                self._client.setex(self._token_key(token_hash), ttl_seconds, serialized)
         except redis.RedisError as error:
             raise EmailVerificationUnavailable from error
 
@@ -67,9 +88,19 @@ class PendingRegistrationStore:
             raise EmailVerificationUnavailable from error
         return json.loads(value) if value else None
 
-    def delete(self, email: str, phone: str) -> None:
+    def load_by_token_hash(self, token_hash: str) -> dict[str, Any] | None:
         try:
-            self._client.delete(self._key(email), self._key(phone))
+            value = self._client.get(self._token_key(token_hash))
+        except redis.RedisError as error:
+            raise EmailVerificationUnavailable from error
+        return json.loads(value) if value else None
+
+    def delete(self, email: str, phone: str, token_hash: str = "") -> None:
+        try:
+            keys = [self._key(email), self._key(phone)]
+            if token_hash:
+                keys.append(self._token_key(token_hash))
+            self._client.delete(*keys)
         except redis.RedisError as error:
             raise EmailVerificationUnavailable from error
 
@@ -135,6 +166,58 @@ def send_verification_email(*, email: str, otp: str) -> str | None:
         except (OSError, httpx.HTTPError, ValueError) as error:
             raise EmailVerificationUnavailable from error
         message_id = response_payload.get("messageId")
+        return str(message_id) if message_id else None
+
+    try:
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=15) as server:
+            if settings.smtp_tls:
+                server.starttls()
+            if settings.smtp_username:
+                server.login(settings.smtp_username, settings.smtp_password)
+            server.send_message(message)
+    except (OSError, smtplib.SMTPException) as error:
+        raise EmailVerificationUnavailable from error
+    return None
+
+
+def send_confirmation_link_email(*, email: str, confirmation_url: str) -> str | None:
+    """Send a one-time email confirmation link through the configured provider."""
+    settings = get_settings()
+    message = EmailMessage()
+    message["Subject"] = "Confirm your email for Monitor Comunitario"
+    message["From"] = settings.email_from
+    message["To"] = email
+    message.set_content(
+        "Confirm your email using this link:\n\n"
+        f"{confirmation_url}\n\n"
+        "This link expires in "
+        f"{format_expiration(settings.email_verification_ttl_seconds)} and can be used once."
+    )
+
+    if settings.email_provider.lower() == "brevo":
+        import httpx
+
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                response = client.post(
+                    settings.brevo_api_url,
+                    headers={
+                        "accept": "application/json",
+                        "api-key": settings.brevo_api_key,
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "sender": {"email": settings.email_from},
+                        "to": [{"email": email}],
+                        "subject": message["Subject"],
+                        "textContent": message.get_content(),
+                    },
+                )
+                response.raise_for_status()
+                payload = response.json()
+        except (OSError, httpx.HTTPError, ValueError) as error:
+            raise EmailVerificationUnavailable from error
+        message_id = payload.get("messageId")
         return str(message_id) if message_id else None
 
     try:

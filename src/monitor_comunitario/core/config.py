@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     phone_confirmation_ttl_seconds: int = 172800
     email_verification_max_attempts: int = 5
     email_verification_resend_cooldown_seconds: int = 60
+    email_confirmation_url: str = "https://monitorcomunitario.soberania.cloud/users/verify-email"
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_username: str = ""

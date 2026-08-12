@@ -38,8 +38,7 @@ class PendingRegistrationResendRequest(BaseModel):
 
 
 class EmailVerificationRequest(BaseModel):
-    email: str = Field(min_length=5, max_length=320)
-    otp: str = Field(min_length=6, max_length=6)
+    token: str = Field(min_length=20, max_length=200)
 
 class UserUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)

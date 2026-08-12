@@ -33,7 +33,7 @@ def test_home_page_emphasizes_registration_and_member_access_paths() -> None:
     assert "Confirme seu e-mail" in response.text
     assert "cruzamento com bairro e rua" not in response.text
     assert "consulta por ID" not in response.text
-    assert "Use este código com seu telefone" in response.text
+    assert "Use esta senha inicial com seu telefone" in response.text
     assert "Usar apenas o necessário" in response.text
     assert "access-code-panel" in response.text
 

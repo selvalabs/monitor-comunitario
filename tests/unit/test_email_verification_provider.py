@@ -50,9 +50,9 @@ def test_brevo_provider_returns_message_id(
 ) -> None:
     monkeypatch.setattr(httpx, "Client", FakeClient)
 
-    message_id = email_verification.send_verification_email(
+    message_id = email_verification.send_confirmation_link_email(
         email="resident@example.com",
-        otp="123456",
+        confirmation_url="https://monitor.example/verify-email?token=opaque-token",
     )
 
     assert message_id == "<brevo-message-id@example.com>"
@@ -60,7 +60,6 @@ def test_brevo_provider_returns_message_id(
     assert FakeClient.requests[0]["headers"]["api-key"] == "test-brevo-key"
     assert FakeClient.requests[0]["json"]["to"] == [{"email": "resident@example.com"}]
     payload = FakeClient.requests[0]["json"]
-    assert payload["subject"] == "Confirme seu cadastro no Monitor Comunitário"
-    assert "123456" in FakeClient.requests[0]["json"]["textContent"]
+    assert payload["subject"] == "Confirm your email for Monitor Comunitario"
+    assert "opaque-token" in FakeClient.requests[0]["json"]["textContent"]
     assert "48 horas" in FakeClient.requests[0]["json"]["textContent"]
-    assert "Se você não iniciou este cadastro, ignore esta mensagem." in payload["textContent"]

@@ -144,7 +144,7 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
             "Oi, {name}. Você quer receber avisos de desligamentos programados para o endereço "
-            "cadastrado? Responda OK para confirmar ou CANCELAR para encerrar o cadastro. "
+            "cadastrado? Responda OK para confirmar ou CANCELAR para cancelar. "
             "Esta confirmação vale por {phone_confirmation_ttl_hours} horas. "
             "Saiba mais: {url}"
         ),
@@ -153,8 +153,8 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
         key="member_access_code_v1",
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
-            "Cadastro confirmado, {name}. Guarde seu código de acesso: {access_code}. "
-            "Entre na área do morador para ver seus avisos: {url}"
+            "Cadastro confirmado, {name}. Sua senha inicial de acesso e: {access_code}. "
+            "Recomendamos trocar a senha na area do morador: {url}"
         ),
     ),
     "human_escalation_v1": HermesTemplate(
