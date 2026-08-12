@@ -57,3 +57,6 @@ tools/diagnose_*.py
 
 # Local brainstorming companion
 .superpowers/
+
+# Local release archives and manifests
+artifacts/
