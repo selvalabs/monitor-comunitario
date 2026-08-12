@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     ca-certificates \
+    && groupadd --system monitor \
+    && useradd --system --gid monitor --home-dir /app --shell /usr/sbin/nologin monitor \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
@@ -21,7 +23,10 @@ COPY src ./src
 RUN uv sync --no-dev
 RUN uv run playwright install --with-deps chromium
 
-RUN mkdir -p /app/snapshots /app/data
+RUN mkdir -p /app/snapshots /app/data \
+    && chown -R monitor:monitor /app
+
+USER monitor
 
 EXPOSE 8000
 
