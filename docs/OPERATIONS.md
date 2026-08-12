@@ -125,7 +125,8 @@ Public numeric-ID access to users is intentionally not exposed. Residents should
 ### Registration verification support
 
 The public registration flow remains responsible for creating the pending
-registration, sending the email OTP, and accepting the resident's OTP. The
+registration, sending the one-time email confirmation link, and accepting the
+resident's explicit confirmation click. The
 protected operator surface may inspect pending state and resend the approved
 email template when delivery fails:
 
@@ -135,7 +136,7 @@ POST /admin/registrations/pending/resend
 ```
 
 The resend request accepts an email address and is rate limited. Responses
-include delivery metadata and verification state, never the OTP or its hash.
+include delivery metadata and verification state, never the token or its hash.
 After email verification, the backend creates the Hermes WhatsApp event. The
 resident's `OK` or `CANCELAR` reply is still received through Hermes and
 processed by the signed internal callback; the operator surface cannot answer

@@ -30,15 +30,18 @@ class EphemeralDeliveryStore:
         except redis.RedisError as error:
             raise EphemeralDeliveryUnavailable from error
 
-    def consume(self, reference: str) -> dict[str, Any] | None:
+    def read(self, reference: str) -> dict[str, Any] | None:
         try:
-            with self._client.pipeline() as pipeline:
-                pipeline.get(self._key(reference))
-                pipeline.delete(self._key(reference))
-                value, _ = pipeline.execute()
+            value = self._client.get(self._key(reference))
         except redis.RedisError as error:
             raise EphemeralDeliveryUnavailable from error
         return json.loads(value) if value else None
+
+    def delete(self, reference: str) -> None:
+        try:
+            self._client.delete(self._key(reference))
+        except redis.RedisError as error:
+            raise EphemeralDeliveryUnavailable from error
 
 
 @lru_cache

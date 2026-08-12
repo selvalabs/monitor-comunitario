@@ -108,7 +108,7 @@ class PendingRegistrationStore:
         """List pending registrations without exposing Redis key material."""
         try:
             values: dict[str, dict[str, Any]] = {}
-            for key in self._client.scan_iter(match="monitor:registration:*"):
+            for key in self._client.scan_iter(match="monitor:registration:[0-9a-f]*"):
                 raw_value = self._client.get(key)
                 if not raw_value:
                     continue

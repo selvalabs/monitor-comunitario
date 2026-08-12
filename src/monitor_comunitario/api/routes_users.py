@@ -420,6 +420,7 @@ def hermes_phone_confirmation(
     delivery_reference = generate_delivery_reference()
     delivery_store = get_ephemeral_delivery_store()
     if delivery_store is None:
+        session.rollback()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Initial access delivery is temporarily unavailable.",

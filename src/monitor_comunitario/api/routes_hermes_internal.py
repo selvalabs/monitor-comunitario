@@ -124,6 +124,21 @@ def acknowledge_hermes_event(
             status_code=status.HTTP_409_CONFLICT,
             detail="Hermes event is not available for acknowledgement.",
         )
+    if (
+        update.status == HermesEventStatus.PROCESSED.value
+        and event.event_type == "member_phone_confirmation_completed"
+    ):
+        try:
+            payload = json.loads(event.payload_json)
+            reference = str(payload.get("access_code_ref", ""))
+            store = get_ephemeral_delivery_store()
+            if store and reference:
+                store.delete(reference)
+        except (EphemeralDeliveryUnavailable, json.JSONDecodeError, TypeError, ValueError) as error:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="One-time delivery secret cleanup is temporarily unavailable.",
+            ) from error
     event.status = update.status
     event.error_message = update.error_message[:2000]
     event.processed_at = utc_now() if update.status == HermesEventStatus.PROCESSED.value else None
@@ -143,11 +158,19 @@ def consume_access_code(event_id: int, session: SessionDep) -> HermesDeliverySec
     event = session.get(HermesEvent, event_id)
     if event is None or event.event_type != "member_phone_confirmation_completed":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hermes event not found.")
+    if event.status not in {
+        HermesEventStatus.QUEUED.value,
+        HermesEventStatus.FAILED.value,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Hermes event is not available for secret delivery.",
+        )
     try:
         payload = json.loads(event.payload_json)
         reference = str(payload.get("access_code_ref", ""))
         store = get_ephemeral_delivery_store()
-        secret = store.consume(reference) if store and reference else None
+        secret = store.read(reference) if store and reference else None
     except (EphemeralDeliveryUnavailable, json.JSONDecodeError, TypeError, ValueError) as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -159,11 +159,11 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 ## Atualizacao 2026-08-10 - fluxo administrativo de cadastro
 
 - Escopo confirmado: o bot administrativo do Monitor apoia somente o ciclo de cadastro, confirmação de e-mail, confirmação Hermes/WhatsApp e acesso do membro.
-- O bot não cadastra moradores, não valida OTP, não responde `OK`/`CANCELAR`, não gera ou expõe código privado e não envia e-mails arbitrários.
+- O bot não cadastra moradores, não valida links de e-mail, não responde `OK`/`CANCELAR`, não gera ou expõe código privado e não envia e-mails arbitrários.
 - Implementado no working tree: listagem protegida de pendências em `/admin/registrations/pending` e reenvio controlado em `/admin/registrations/pending/resend`.
-- O reenvio usa o provedor de e-mail configurado, registra `email_delivery_id`, aplica cooldown e nunca retorna OTP ou hash.
+- O reenvio usa o provedor de e-mail configurado, registra `email_delivery_id`, aplica cooldown e nunca retorna token ou hash.
 - O endereço canônico de produção nos exemplos é `monitor@monitor-mail.soberania.cloud`.
-- O fluxo existente permanece: e-mail OTP -> `POST /users/verify-email` -> evento Hermes WhatsApp -> callback assinado com resposta do morador -> criação do acesso.
+- O fluxo existente permanece: link de e-mail de uso único -> `POST /users/verify-email` -> evento Hermes WhatsApp -> callback assinado com resposta do morador -> criação do acesso.
 - Validação local: Ruff limpo, Mypy limpo, 130 testes aprovados.
 - O serviço existente `monitor-comunitario-telegram-bot` da `main` foi preservado; o fluxo de cadastro agora usa o núcleo redigido e os endpoints privados com `X-Monitor-Bot-Key`.
 - O bot não acessa PostgreSQL diretamente para esse fluxo e não recebe payloads Hermes com código privado.

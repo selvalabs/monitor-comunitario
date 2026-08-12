@@ -62,7 +62,7 @@ Use the pooler host shown by the Supabase project dashboard/API for the specific
 
 ### Registration verification
 
-Production registration is fail-closed and requires email OTP followed by WhatsApp confirmation.
+Production registration is fail-closed and requires a one-time email link followed by WhatsApp confirmation.
 
 ```env
 EMAIL_VERIFICATION_ENABLED=true
@@ -85,7 +85,7 @@ HERMES_EVENT_API_SECRET=<strong-hermes-event-api-secret>
 MEMBER_AREA_URL=https://monitorcomunitario.soberania.cloud/member
 ```
 
-After the email OTP is verified, Monitor Comunitario creates a `member_phone_confirmation_requested` event in `hermes_events`. Hermes consumes that event, selects the approved `member_phone_confirmation_v1` template, and sends it through Hermes' own WhatsApp connection. The Monitor does not store WhatsApp gateway credentials, call Evolution, or receive a gateway webhook.
+After the one-time email link is confirmed, Monitor Comunitario creates a `member_phone_confirmation_requested` event in `hermes_events`. Hermes consumes that event, selects the approved `member_phone_confirmation_v1` template, and sends it through Hermes' own WhatsApp connection. The Monitor does not store WhatsApp gateway credentials, call Evolution, or receive a gateway webhook.
 
 When the resident replies `OK` or `CANCELAR`, Hermes calls:
 
@@ -94,7 +94,7 @@ POST /users/internal/hermes/phone-confirmation
 X-Hermes-Callback-Secret: <strong-hermes-callback-secret>
 ```
 
-Only exact `OK` activates the phone and creates the member record. `CANCELAR` removes the pending registration; no response lets the Redis request expire after 48 hours. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved access-code message.
+Hermes classifies clear affirmative replies such as `OK`, `SIM`, `QUERO`, `CLARO` and `CONFIRMO`, and clear cancellation replies such as `CANCELAR`, `NAO QUERO`, `DESISTO` and `PARAR`. Ambiguous replies are ignored for safety. `CANCELAR` removes the pending registration; no response lets the Redis request expire after 48 hours. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved initial-password message.
 
 Brevo is the outbound transactional provider for this flow. Cloudflare Email Routing is a separate inbound service and is not called by the Monitor API. The WhatsApp connection, credentials, inbound message handling, and delivery retries remain owned by Hermes. Configure those on the Hermes side, never in `.env.production` for Monitor Comunitario.
 
@@ -102,10 +102,11 @@ Hermes polls the internal event contract with `X-Hermes-Event-Secret`:
 
 ```text
 GET /internal/hermes/events?event_type=member_phone_confirmation_requested
+POST /internal/hermes/events/{id}/access-code
 PATCH /internal/hermes/events/{id}
 ```
 
-Polling atomically changes events from `created` to `queued`. Hermes acknowledges delivery with `{"status":"processed"}` or `{"status":"failed","error_message":"..."}`. The endpoint exposes only the two resident WhatsApp event types and does not grant database access.
+Polling atomically changes events from `created` or `failed` to `queued`. For a `member_phone_confirmation_completed` event, Hermes first claims the event, then calls the access-code endpoint with the same event secret. The response contains the initial password while the event is pending; the value remains only in Redis so delivery can be retried, and is deleted when Hermes acknowledges `processed`. Hermes acknowledges delivery with `{"status":"processed"}` or `{"status":"failed","error_message":"..."}`. The endpoint exposes only the two resident WhatsApp event types and does not grant database access.
 
 ### Admin access
 
