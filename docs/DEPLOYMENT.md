@@ -345,6 +345,7 @@ Before a real deployment:
 [ ] worker logs show scheduled execution
 [ ] docker-ops allowlist matches the real Compose container names when using guarded VPS deploy
 [ ] snapshots volume is writable
+[ ] API and worker containers run as the unprivileged `monitor` user
 ```
 
 ## Telegram registration bot

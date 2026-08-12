@@ -3,6 +3,16 @@ from pathlib import Path
 ROOT = Path(__file__).parents[2]
 
 
+def test_dockerfile_declares_non_root_runtime_user_and_owned_runtime_dirs() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "groupadd" in dockerfile
+    assert "useradd" in dockerfile
+    assert "chown" in dockerfile
+    assert "USER monitor" in dockerfile
+    assert "monitor:monitor" in dockerfile
+
+
 def test_local_compose_binds_host_ports_to_loopback() -> None:
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
