@@ -79,7 +79,7 @@ fi
 [[ -n "$current_link" ]] || die "mutation requires --current-link"
 
 if [[ "$command_name" == "promote" ]]; then
-  "${compose[@]}" build --pull=false
+  "${compose[@]}" build --pull=false migrate
   "${compose[@]}" run --rm migrate
   "${compose[@]}" up -d api api-internal worker telegram-bot cloudflared
   "${compose[@]}" exec -T api curl -fsS http://127.0.0.1:8000/ready >/dev/null

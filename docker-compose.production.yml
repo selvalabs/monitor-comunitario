@@ -14,7 +14,7 @@ services:
 
   migrate:
     container_name: monitor-comunitario-migrate
-    image: monitor-comunitario-migrate:${MONITOR_IMAGE_TAG:-local}
+    image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
@@ -25,10 +25,7 @@ services:
 
   api:
     container_name: monitor-comunitario-api
-    image: monitor-comunitario-api:${MONITOR_IMAGE_TAG:-local}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}
     command: >
       uv run uvicorn monitor_comunitario.api.main:app
       --host 0.0.0.0
@@ -65,10 +62,7 @@ services:
 
   api-internal:
     container_name: monitor-comunitario-api-internal
-    image: monitor-comunitario-api-internal:${MONITOR_IMAGE_TAG:-local}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}
     command: >
       uv run uvicorn monitor_comunitario.api.internal:app
       --host 0.0.0.0
@@ -110,10 +104,7 @@ services:
 
   worker:
     container_name: monitor-comunitario-worker
-    image: monitor-comunitario-worker:${MONITOR_IMAGE_TAG:-local}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}
     command: uv run monitor-comunitario worker
     env_file:
       - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
@@ -128,10 +119,7 @@ services:
 
   telegram-bot:
     container_name: monitor-comunitario-telegram-bot
-    image: monitor-comunitario-telegram-bot:${MONITOR_IMAGE_TAG:-local}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}
     command: uv run monitor-comunitario telegram-bot
     env_file:
       - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
