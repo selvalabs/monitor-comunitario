@@ -143,9 +143,11 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
         key="member_phone_confirmation_v1",
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
-            "Oi, {name}. Você quer receber avisos de desligamentos programados para o endereço "
-            "cadastrado? Responda OK para confirmar ou CANCELAR para encerrar o cadastro. "
-            "Esta confirmação vale por {phone_confirmation_ttl_hours} horas. "
+            "Oi, {name}.\n\n"
+            "Você quer receber avisos de desligamentos programados para o endereço cadastrado?\n\n"
+            "Responda *OK* para confirmar.\n"
+            "Responda *CANCELAR* para encerrar o cadastro.\n\n"
+            "Esta confirmação vale por {phone_confirmation_ttl_hours} horas.\n"
             "Saiba mais: {url}"
         ),
     ),
@@ -153,8 +155,11 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
         key="member_access_code_v1",
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
-            "Cadastro confirmado, {name}. Guarde seu código de acesso: {access_code}. "
-            "Entre na área do morador para ver seus avisos: {url}"
+            "Cadastro confirmado, {name}.\n\n"
+            "Você receberá avisos de desligamentos programados para o endereço cadastrado.\n\n"
+            "Seu código de acesso: *{access_code}*\n"
+            "Acesse sua área: {url}\n\n"
+            "Para parar de receber avisos a qualquer momento, responda *PARAR*."
         ),
     ),
     "human_escalation_v1": HermesTemplate(

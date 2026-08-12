@@ -68,4 +68,4 @@ A retenção automática de cadastros apenas desativados permanece fora desta et
 
 ## Cadastro verificado
 
-O cadastro público permanece pendente no Redis até a confirmação do e-mail e do telefone. O OTP tem expiração e limite de tentativas. Após o e-mail, o Monitor registra um evento para o Hermes; o Hermes envia a mensagem pelo seu próprio canal WhatsApp. Somente `OK` ativa o cadastro, `CANCELAR` remove o pendente e a ausência de resposta expira a solicitação.
+O cadastro público permanece pendente no Redis até a confirmação do e-mail e do telefone. O OTP tem expiração e limite de tentativas. Após o e-mail, o Monitor registra um evento para o Hermes; o Hermes envia a mensagem pelo seu próprio canal WhatsApp. Somente `OK` ativa o cadastro e os avisos, `CANCELAR` remove o pendente e a ausência de resposta expira a solicitação. Um membro ativo pode responder `PARAR` a qualquer momento para desativar novos avisos sem apagar a conta; a exclusão permanente continua disponível na área do morador.
