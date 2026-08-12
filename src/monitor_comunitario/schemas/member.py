@@ -9,8 +9,10 @@ class MemberAccessRequest(BaseModel):
     access_code: str = Field(min_length=4, max_length=40)
 
 
-class MemberDeleteRequest(MemberAccessRequest):
-    """Credentials required before permanently deleting member data."""
+class MemberDeleteRequest(BaseModel):
+    """Credentials required before permanently deleting the authenticated member."""
+
+    access_code: str = Field(min_length=4, max_length=40)
 
 class MemberAccessRead(BaseModel):
     user: UserRead

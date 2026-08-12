@@ -47,12 +47,12 @@ def test_admin_session_requires_csrf_for_state_changing_requests(
             headers={"X-Admin-API-Key": "test-admin-key"},
         )
         without_csrf = client.patch(
-            "/admin/users/999",
+            "/admin/users/999999",
             json={"notifications_approved": True},
         )
         csrf_token = client.cookies.get(CSRF_COOKIE_NAME)
         with_csrf = client.patch(
-            "/admin/users/999",
+            "/admin/users/999999",
             headers={"X-CSRF-Token": csrf_token},
             json={"notifications_approved": True},
         )
