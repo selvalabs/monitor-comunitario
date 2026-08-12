@@ -12,6 +12,7 @@ from monitor_comunitario.notifications.telegram_admin_bot import (
     TelegramAdminUpdate,
 )
 from monitor_comunitario.notifications.telegram_provider import TelegramMessage
+from monitor_comunitario.notifications.telegram_security import telegram_request_error
 
 logger = logging.getLogger(__name__)
 MAX_MESSAGE_LENGTH = 4_000
@@ -60,10 +61,13 @@ class MonitorTelegramBot:
     async def _api(self, method: str, payload: dict[str, object]) -> dict[str, object]:
         if not self.bot_token:
             raise RuntimeError("Monitor Telegram bot token is not configured.")
-        response = await self.client.post(
-            f"{self.api_base_url}/bot{self.bot_token}/{method}", json=payload
-        )
-        response.raise_for_status()
+        try:
+            response = await self.client.post(
+                f"{self.api_base_url}/bot{self.bot_token}/{method}", json=payload
+            )
+            response.raise_for_status()
+        except httpx.HTTPError:
+            raise telegram_request_error(method) from None
         data = response.json()
         if not isinstance(data, dict) or data.get("ok") is not True:
             raise RuntimeError(f"Telegram API rejected {method}.")
