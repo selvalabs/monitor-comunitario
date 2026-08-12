@@ -29,4 +29,10 @@ def get_client_ip(request: Request, *, trusted_proxy_ips: str) -> str:
 
     forwarded_for = request.headers.get("x-forwarded-for", "")
     first_forwarded_ip = forwarded_for.split(",", 1)[0].strip()
-    return first_forwarded_ip or direct_ip
+    if not first_forwarded_ip:
+        return direct_ip
+    try:
+        ip_address(first_forwarded_ip)
+    except ValueError:
+        return direct_ip
+    return first_forwarded_ip
