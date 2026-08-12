@@ -87,14 +87,14 @@ MEMBER_AREA_URL=https://monitorcomunitario.soberania.cloud/member
 
 After the email OTP is verified, Monitor Comunitario creates a `member_phone_confirmation_requested` event in `hermes_events`. Hermes consumes that event, selects the approved `member_phone_confirmation_v1` template, and sends it through Hermes' own WhatsApp connection. The Monitor does not store WhatsApp gateway credentials, call Evolution, or receive a gateway webhook.
 
-When the resident replies `OK` or `CANCELAR`, Hermes calls:
+When the resident replies `OK`, `CANCELAR`, or `PARAR`, Hermes calls:
 
 ```text
 POST /users/internal/hermes/phone-confirmation
 X-Hermes-Callback-Secret: <strong-hermes-callback-secret>
 ```
 
-Only exact `OK` activates the phone and creates the member record. `CANCELAR` removes the pending registration; no response lets the Redis request expire after 48 hours. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved access-code message.
+Only exact `OK` activates the phone, enables notifications, and creates the member record. `CANCELAR` removes the pending registration; no response lets the Redis request expire after 48 hours. `PARAR` keeps an active member account but disables future outage notifications. After confirmation, Monitor creates a `member_phone_confirmation_completed` event for Hermes to send the approved access-code message.
 
 Brevo is the outbound transactional provider for this flow. Cloudflare Email Routing is a separate inbound service and is not called by the Monitor API. The WhatsApp connection, credentials, inbound message handling, and delivery retries remain owned by Hermes. Configure those on the Hermes side, never in `.env.production` for Monitor Comunitario.
 

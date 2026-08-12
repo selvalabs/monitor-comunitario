@@ -373,14 +373,29 @@ def hermes_phone_confirmation(
         return {"status": "ignored"}
     pending = store.load_by_phone(phone)
     if pending is None or not pending.get("email_verified"):
-        return {"status": "ignored"}
+        if reply != "PARAR":
+            return {"status": "ignored"}
+        user = session.scalar(
+            select(User)
+            .where(User.phone == phone, User.is_active.is_(True))
+            .order_by(User.created_at.desc(), User.id.desc())
+        )
+        if user is None:
+            return {"status": "ignored"}
+        user.notifications_approved = False
+        session.add(user)
+        session.commit()
+        return {"status": "notifications_stopped"}
     if reply == "CANCELAR":
         store.delete(pending["email"], phone)
         return {"status": "cancelled"}
     if reply != "OK":
         return {"status": "ignored"}
 
-    user, access_code = _create_verified_user(session, pending)
+    user, access_code = _create_verified_user(
+        session,
+        {**pending, "notifications_approved": True},
+    )
     try:
         delivery_ref = store.save_delivery_access_code(
             user.id,

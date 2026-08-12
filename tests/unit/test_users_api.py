@@ -9,7 +9,7 @@ from monitor_comunitario.api.internal import app as internal_app
 from monitor_comunitario.api.main import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
-from monitor_comunitario.db.models import HermesEvent
+from monitor_comunitario.db.models import HermesEvent, User
 from monitor_comunitario.db.session import SessionLocal
 
 ADMIN_API_KEY = "test-admin-key"
@@ -269,6 +269,10 @@ def test_email_and_whatsapp_verification_flow(
     assert request_event.payload_json is not None
     assert '"phone_confirmation_ttl_hours":48' in request_event.payload_json
     assert store.ttls[-1] == 172800
+    with SessionLocal() as session:
+        approval_event_count_before_confirmation = session.query(HermesEvent).filter(
+            HermesEvent.event_type == "admin_approval_pending"
+        ).count()
 
     with TestClient(internal_app) as internal_client:
         callback = internal_client.post(
@@ -291,6 +295,36 @@ def test_email_and_whatsapp_verification_flow(
     assert '"user_id"' in completion_event.payload_json
     assert '"delivery_ref"' in completion_event.payload_json
     assert store.ttls[-1] == 172800
+
+    with SessionLocal() as session:
+        confirmed_user = session.scalar(
+            select(User).where(User.phone == "5548999912345").order_by(User.id.desc())
+        )
+    assert confirmed_user is not None
+    assert confirmed_user.is_active is True
+    assert confirmed_user.notifications_approved is True
+    with SessionLocal() as session:
+        approval_event_count_after_confirmation = session.query(HermesEvent).filter(
+            HermesEvent.event_type == "admin_approval_pending"
+        ).count()
+    assert approval_event_count_after_confirmation == approval_event_count_before_confirmation
+
+    with TestClient(internal_app) as internal_client:
+        opt_out = internal_client.post(
+            "/users/internal/hermes/phone-confirmation",
+            headers={"X-Hermes-Callback-Secret": "callback-secret"},
+            json={"phone": "5548999912345", "reply": "PARAR"},
+        )
+    assert opt_out.status_code == 200
+    assert opt_out.json()["status"] == "notifications_stopped"
+
+    with SessionLocal() as session:
+        opted_out_user = session.scalar(
+            select(User).where(User.phone == "5548999912345").order_by(User.id.desc())
+        )
+    assert opted_out_user is not None
+    assert opted_out_user.is_active is True
+    assert opted_out_user.notifications_approved is False
 
     access = client.post(
         "/member/access",
