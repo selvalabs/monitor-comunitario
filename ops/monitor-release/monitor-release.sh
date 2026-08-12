@@ -81,7 +81,7 @@ fi
 if [[ "$command_name" == "promote" ]]; then
   "${compose[@]}" build --pull=false
   "${compose[@]}" run --rm migrate
-  "${compose[@]}" up -d api worker telegram-bot cloudflared
+  "${compose[@]}" up -d api api-internal worker telegram-bot cloudflared
   "${compose[@]}" exec -T api curl -fsS http://127.0.0.1:8000/ready >/dev/null
   ln -sfn "$project_root" "$current_link"
   printf 'MONITOR_RELEASE_PROMOTED commit=%s backup=%s previous=%s\n' "$release_commit" "$backup_ref" "$previous"
@@ -96,7 +96,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
 PY
 )"
   previous_compose=(docker compose --project-name monitor-comunitario --project-directory "$previous_root" --env-file "$env_file" -f "$previous_root/docker-compose.production.yml")
-  "${previous_compose[@]}" up -d api worker telegram-bot cloudflared
+  "${previous_compose[@]}" up -d api api-internal worker telegram-bot cloudflared
   "${previous_compose[@]}" exec -T api curl -fsS http://127.0.0.1:8000/ready >/dev/null
   ln -sfn "$previous_root" "$current_link"
   printf 'MONITOR_RELEASE_ROLLED_BACK target=%s backup=%s\n' "$MONITOR_IMAGE_TAG" "$backup_ref"

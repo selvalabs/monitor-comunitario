@@ -78,7 +78,7 @@ services:
     expose:
       - "8000"
     volumes:
-      - ./snapshots:/app/snapshots
+      - ${MONITOR_RUNTIME_ROOT:-.}/snapshots:/app/snapshots
     depends_on:
       redis:
         condition: service_healthy
