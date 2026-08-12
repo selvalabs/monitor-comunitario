@@ -183,6 +183,19 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 
 ## Template para futuras atualizacoes
 
+## Atualizacao de hardening 2026-08-12
+
+- Execucao do plano de seguranca da issue `#37` continuou em branches isoladas.
+- PR #161: erros HTTP do Telegram nao propagam token, URL ou corpo para logs/excecoes.
+- PR #162: `X-Forwarded-For` invalido ou vazio nao substitui o IP direto do cliente; inclui cobertura IPv6.
+- PR #163: CodeQL passou a analisar `javascript-typescript` e os testes frontend cobrem superficies de armazenamento e renderizacao.
+- PR #164: imagem Docker declara o usuario nao-root `monitor`; build local e execucao verificaram `uid=999(monitor)`.
+- PR #165: preflight de release somente leitura cobre configuracao, Compose/rede, proxy, TLS, banco, Redis, logs e rollback.
+- Gate integrado dos quatro commits: Ruff limpo, Mypy limpo, `159 passed` e `node --check` do admin.js aprovado.
+- `docker compose config` nao foi executado contra producao: o checkout local nao possui `.env.production`, por decisao de nao copiar ou expor segredos.
+- Nenhum deploy, restart, migration remota, rotacao de segredo, DNS ou alteracao em outro servico da VPS foi executado.
+- Proxima acao exata: revisar/mergear PRs #161-#165 na ordem adequada; depois executar o preflight no host do Monitor com o ambiente protegido, antes de qualquer deploy.
+
 ```text
 Data:
 Agente:
