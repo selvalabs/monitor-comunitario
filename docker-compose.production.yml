@@ -2,7 +2,7 @@ services:
   redis:
     image: redis:7-alpine
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"]
     volumes:
       - monitor_redis_data:/data
@@ -14,16 +14,18 @@ services:
 
   migrate:
     container_name: monitor-comunitario-migrate
+    image: monitor-comunitario-migrate:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
     command: uv run monitor-comunitario db-upgrade
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     restart: "no"
 
   api:
     container_name: monitor-comunitario-api
+    image: monitor-comunitario-api:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
@@ -32,7 +34,7 @@ services:
       --host 0.0.0.0
       --port 8000
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     expose:
       - "8000"
     labels:
@@ -47,7 +49,7 @@ services:
       - "traefik.http.middlewares.monitor-comunitario-rate-limit.ratelimit.period=1m"
       - "traefik.http.services.monitor-comunitario.loadbalancer.server.port=8000"
     volumes:
-      - ./snapshots:/app/snapshots
+      - ${MONITOR_RUNTIME_ROOT:-.}/snapshots:/app/snapshots
     depends_on:
       redis:
         condition: service_healthy
@@ -63,6 +65,7 @@ services:
 
   api-internal:
     container_name: monitor-comunitario-api-internal
+    image: monitor-comunitario-api-internal:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
@@ -71,11 +74,11 @@ services:
       --host 0.0.0.0
       --port 8000
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     expose:
       - "8000"
     volumes:
-      - ./snapshots:/app/snapshots
+      - ${MONITOR_RUNTIME_ROOT:-.}/snapshots:/app/snapshots
     depends_on:
       redis:
         condition: service_healthy
@@ -98,8 +101,8 @@ services:
     user: "0:0"
     command: tunnel --no-autoupdate run --token-file /run/secrets/monitor-tunnel-token
     volumes:
-      - ./ops/cloudflared:/etc/cloudflared:ro
-      - ./tunnel-secrets/monitor-tunnel-token:/run/secrets/monitor-tunnel-token:ro
+      - ${MONITOR_RUNTIME_ROOT:-.}/ops/cloudflared:/etc/cloudflared:ro
+      - ${MONITOR_RUNTIME_ROOT:-.}/tunnel-secrets/monitor-tunnel-token:/run/secrets/monitor-tunnel-token:ro
     depends_on:
       api-internal:
         condition: service_healthy
@@ -107,14 +110,15 @@ services:
 
   worker:
     container_name: monitor-comunitario-worker
+    image: monitor-comunitario-worker:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
     command: uv run monitor-comunitario worker
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     volumes:
-      - ./snapshots:/app/snapshots
+      - ${MONITOR_RUNTIME_ROOT:-.}/snapshots:/app/snapshots
     depends_on:
       redis:
         condition: service_healthy
@@ -124,12 +128,13 @@ services:
 
   telegram-bot:
     container_name: monitor-comunitario-telegram-bot
+    image: monitor-comunitario-telegram-bot:${MONITOR_IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
     command: uv run monitor-comunitario telegram-bot
     env_file:
-      - .env.production
+      - ${MONITOR_ENV_FILE:?MONITOR_ENV_FILE must be an absolute external env file}
     environment:
       - MONITOR_BOT_API_URL=http://api-internal:8000
     depends_on:
