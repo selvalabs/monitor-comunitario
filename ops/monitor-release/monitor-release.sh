@@ -43,7 +43,7 @@ require_path "env file" "$env_file"
 [[ -f "$release/release-manifest.json" ]] || die "release manifest missing"
 [[ -f "$release/docker-compose.production.yml" ]] || die "production compose missing"
 
-release_commit="$(python - "$release/release-manifest.json" <<'PY'
+release_commit="$(python3 - "$release/release-manifest.json" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     value = json.load(handle).get("commit", "")
@@ -89,7 +89,7 @@ else
   previous_root="$(cd "$previous" && pwd -P)"
   export MONITOR_RUNTIME_ROOT="$runtime_root"
   export MONITOR_ENV_FILE="$env_file"
-  export MONITOR_IMAGE_TAG="$(python - "$previous/release-manifest.json" <<'PY'
+  export MONITOR_IMAGE_TAG="$(python3 - "$previous/release-manifest.json" <<'PY'
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as handle:
     print(json.load(handle)["commit"])
