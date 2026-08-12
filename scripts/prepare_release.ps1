@@ -62,7 +62,9 @@ $manifest = [ordered]@{
     tracked_file_count = $files.Count
     generated_at_utc = [DateTime]::UtcNow.ToString("o")
 }
-$manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $releaseRoot "release-manifest.json") -Encoding UTF8
+$manifestPath = Join-Path $releaseRoot "release-manifest.json"
+$manifestJson = $manifest | ConvertTo-Json
+[System.IO.File]::WriteAllText($manifestPath, $manifestJson, [System.Text.UTF8Encoding]::new($false))
 Write-Output "RELEASE_PREPARED commit=$resolvedCommit"
 Write-Output "ARCHIVE=$archivePath"
 Write-Output "MANIFEST=$(Join-Path $releaseRoot 'release-manifest.json')"
