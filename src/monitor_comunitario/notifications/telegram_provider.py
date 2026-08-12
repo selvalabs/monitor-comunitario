@@ -4,6 +4,8 @@ from typing import Any, Protocol, cast
 
 import httpx
 
+from monitor_comunitario.notifications.telegram_security import telegram_request_error
+
 
 @dataclass(frozen=True)
 class TelegramMessage:
@@ -63,5 +65,8 @@ class TelegramNotificationProvider:
 
         async with self.client_factory(30) as client:
             self.last_client = client
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
+            try:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+            except httpx.HTTPError:
+                raise telegram_request_error("sendMessage") from None
