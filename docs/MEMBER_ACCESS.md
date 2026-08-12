@@ -70,7 +70,14 @@ The resident page is available at:
 /member
 ```
 
-The browser stores the active member session in `sessionStorage`, not `localStorage`.
+After successful access, the backend creates a short-lived opaque session in Redis.
+The browser receives the session only as an `HttpOnly`, `Secure`,
+`SameSite=Strict` cookie. The member page restores its data through `GET /member/me`;
+it does not store member data or credentials in `sessionStorage` or `localStorage`.
+
+State-changing member operations require the readable CSRF cookie in the
+`X-CSRF-Token` header. Logout uses `DELETE /member/session` and permanently
+deletes the server-side session.
 
 ## Security notes
 
