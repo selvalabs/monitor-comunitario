@@ -32,6 +32,10 @@ def test_registration_confirmation_templates_explain_the_next_step() -> None:
     confirmation = get_template("member_phone_confirmation_v1")
     completion = get_template("member_access_code_v1")
 
+    assert (
+        "Você quer receber avisos de desligamentos programados e falta de energia para o "
+        "endereço cadastrado?" in confirmation.body
+    )
     assert "Responda *OK* para confirmar." in confirmation.body
     assert "Responda *CANCELAR* para encerrar o cadastro." in confirmation.body
     assert "Esta confirmação vale por {phone_confirmation_ttl_hours} horas." in confirmation.body

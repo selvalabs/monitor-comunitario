@@ -144,7 +144,8 @@ HERMES_TEMPLATES: dict[str, HermesTemplate] = {
         intent=UserFacingIntent.ACCESS_MEMBER_AREA,
         body=(
             "Oi, {name}.\n\n"
-            "Você quer receber avisos de desligamentos programados para o endereço cadastrado?\n\n"
+            "Você quer receber avisos de desligamentos programados e falta de energia para o "
+            "endereço cadastrado?\n\n"
             "Responda *OK* para confirmar.\n"
             "Responda *CANCELAR* para encerrar o cadastro.\n\n"
             "Esta confirmação vale por {phone_confirmation_ttl_hours} horas.\n"
