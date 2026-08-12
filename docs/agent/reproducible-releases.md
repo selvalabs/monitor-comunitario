@@ -27,7 +27,7 @@ O fluxo deve manter este layout fora do checkout atual:
   tunnel-secrets/
 ```
 
-Antes da promoção: backup específico do Monitor, release anterior identificada, archive/manifesta validado, `.env.production` fora da release e modo 600, volumes fora da release, e imagens API/worker tagueadas pelo commit. `current` só muda depois de build, migration compatível, health/readiness, headers e logs verificados.
+Antes da promoção: backup específico do Monitor, release anterior identificada, archive/manifesto validado, `.env.production` fora da release e modo 600, volumes fora da release, e imagens API/worker tagueadas pelo commit. `current` só muda depois de build, migration compatível, health/readiness, headers e logs verificados.
 
 O wrapper autorizado do Monitor deve implementar essa promoção. Não executar `docker compose up` diretamente enquanto o wrapper não suportar a operação.
 
