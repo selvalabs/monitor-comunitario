@@ -42,6 +42,11 @@ The API ignores `X-Forwarded-For` unless the direct peer belongs to an explicitl
 TRUSTED_PROXY_IPS=172.16.15.1/32
 ```
 
+The application uses `X-Forwarded-For` only when the directly connected peer
+belongs to `TRUSTED_PROXY_IPS`. The proxy must replace or sanitize the header
+before forwarding it. If the first forwarded value is empty or invalid, the
+application falls back to the direct proxy address for rate limiting.
+
 Use the actual Docker bridge gateway or proxy network discovered during preflight. Do not copy this example blindly. Leave it empty when the proxy path is not verified; the application will then use the direct peer address safely.
 
 ### Database
