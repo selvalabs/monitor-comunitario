@@ -330,6 +330,8 @@ docker compose -f docker-compose.production.yml --env-file .env.production resta
 
 ## Basic deployment checklist
 
+Execute o [preflight de release](agent/release-preflight.md) antes desta lista. O preflight e somente leitura e nao substitui autorizacao humana.
+
 Before a real deployment:
 
 ```text
