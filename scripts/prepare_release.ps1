@@ -22,8 +22,9 @@ function Assert-TrackedTreeSafe {
     param([Parameter(Mandatory = $true)][string]$Revision)
     $paths = @(Invoke-Git @("ls-tree", "-r", "--name-only", $Revision))
     $unsafe = @($paths | Where-Object {
-        $_ -match '(^|/)(\.env($|\.)|credentials\.json$|tunnel-secrets/|snapshots/|data/)' -and
-        $_ -notmatch '(^|/)(\.env\.example|\.env\.docker\.example|\.env\.supabase\.example)$'
+        $protected = $_ -match '(^|/)(\.env($|\.)|credentials\.json$|tunnel-secrets/|snapshots/|data/)'
+        $allowedPlaceholder = $_ -match '(^|/)(\.env\.(example|docker\.example|production\.example|supabase\.example)|data/\.gitkeep|snapshots/\.gitkeep)$'
+        $protected -and -not $allowedPlaceholder
     })
     if ($unsafe.Count -gt 0) {
         throw "Tracked release contains protected paths: $($unsafe -join ', ')"
