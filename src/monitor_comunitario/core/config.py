@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     rate_limit_register_window_seconds: int = 600
     rate_limit_member_limit: int = 10
     rate_limit_member_window_seconds: int = 300
+    member_session_ttl_seconds: int = 3600
     public_registration_enabled: bool = True
     email_verification_enabled: bool = False
     email_verification_ttl_seconds: int = 172800

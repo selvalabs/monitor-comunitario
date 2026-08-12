@@ -10,33 +10,27 @@ const deleteCheck = document.querySelector("#delete-member-check");
 const confirmDeleteButton = document.querySelector("#confirm-delete-member");
 const cancelDeleteButton = document.querySelector("#cancel-delete-member");
 
-const memberSessionKey = "monitor-comunitario:member-session";
+const memberCsrfCookieName = "monitor_member_csrf";
 
 function setMemberStatus(message, isError = false) {
   memberStatus.textContent = message;
   memberStatus.classList.toggle("error", isError);
 }
 
-function saveMemberSession(data) {
-  window.sessionStorage.setItem(memberSessionKey, JSON.stringify(data));
+function getCookieValue(name) {
+  const prefix = `${name}=`;
+  const cookie = document.cookie.split("; ").find((value) => value.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : "";
 }
 
-function getMemberSession() {
-  const rawValue = window.sessionStorage.getItem(memberSessionKey);
-
-  if (!rawValue) {
-    return null;
+async function logoutMember() {
+  const response = await fetch("/member/session", {
+    method: "DELETE",
+    headers: { "X-CSRF-Token": getCookieValue(memberCsrfCookieName) },
+  });
+  if (!response.ok) {
+    throw new Error("Nao foi possivel encerrar a sessao.");
   }
-
-  try {
-    return JSON.parse(rawValue);
-  } catch {
-    return null;
-  }
-}
-
-function clearMemberSession() {
-  window.sessionStorage.removeItem(memberSessionKey);
   memberPanel.hidden = true;
   setMemberStatus("Você saiu desta sessão.");
 }
@@ -132,6 +126,15 @@ async function accessMemberArea(payload) {
   return body;
 }
 
+async function loadMemberArea() {
+  const response = await fetch("/member/me");
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body.detail || "Sessão do morador indisponível.");
+  }
+  return body;
+}
+
 accessForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -150,7 +153,6 @@ accessForm.addEventListener("submit", async (event) => {
 
   try {
     const data = await accessMemberArea(payload);
-    saveMemberSession(data);
     renderMemberSession(data);
     setMemberStatus("Acesso liberado para esta sessão do navegador.");
   } catch (error) {
@@ -159,7 +161,9 @@ accessForm.addEventListener("submit", async (event) => {
   }
 });
 
-clearSessionButton.addEventListener("click", clearMemberSession);
+clearSessionButton.addEventListener("click", () => {
+  logoutMember().catch((error) => setMemberStatus(error.message, true));
+});
 
 openDeleteButton.addEventListener("click", () => {
   deleteConfirmation.hidden = false;
@@ -171,20 +175,16 @@ deleteAccessCode.addEventListener("input", updateDeleteButtonState);
 deleteCheck.addEventListener("change", updateDeleteButtonState);
 
 confirmDeleteButton.addEventListener("click", async () => {
-  const session = getMemberSession();
-  if (!session?.user?.phone) {
-    setMemberStatus("A sessão do morador expirou. Acesse novamente.", true);
-    return;
-  }
-
   confirmDeleteButton.disabled = true;
   setMemberStatus("Excluindo seus dados...");
   try {
     const response = await fetch("/member/account", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": getCookieValue(memberCsrfCookieName),
+      },
       body: JSON.stringify({
-        phone: session.user.phone,
         access_code: deleteAccessCode.value.trim(),
       }),
     });
@@ -192,7 +192,7 @@ confirmDeleteButton.addEventListener("click", async () => {
       const body = await response.json();
       throw new Error(body.detail || "Não foi possível excluir o cadastro.");
     }
-    clearMemberSession();
+    memberPanel.hidden = true;
     resetDeleteConfirmation();
     setMemberStatus("Seu cadastro e seus dados foram excluídos.");
   } catch (error) {
@@ -201,11 +201,9 @@ confirmDeleteButton.addEventListener("click", async () => {
   }
 });
 
-const storedSession = getMemberSession();
-
-if (storedSession) {
-  renderMemberSession(storedSession);
-  setMemberStatus("Sessão restaurada neste navegador.");
-} else {
-  setMemberStatus("Informe telefone e código para acessar seus alertas.");
-}
+loadMemberArea()
+  .then((data) => {
+    renderMemberSession(data);
+    setMemberStatus("Sessão restaurada neste navegador.");
+  })
+  .catch(() => setMemberStatus("Informe telefone e código para acessar seus alertas."));
