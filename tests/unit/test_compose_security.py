@@ -33,6 +33,13 @@ def test_production_compose_does_not_publish_api_port() -> None:
     assert "expose:" in compose
     assert '"8000"' in compose
 
+
+def test_production_compose_shares_one_runtime_image() -> None:
+    compose = (ROOT / "docker-compose.production.yml").read_text(encoding="utf-8")
+
+    assert compose.count("image: monitor-comunitario:${MONITOR_IMAGE_TAG:-local}") == 5
+    assert compose.count("    build:") == 1
+
 def test_production_compose_applies_edge_rate_limit_to_monitor_router() -> None:
     compose = (ROOT / "docker-compose.production.yml").read_text(encoding="utf-8")
 

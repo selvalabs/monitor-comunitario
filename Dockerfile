@@ -20,7 +20,7 @@ COPY pyproject.toml uv.lock README.md alembic.ini ./
 COPY migrations ./migrations
 COPY src ./src
 
-RUN uv sync --no-dev
+RUN uv sync --no-dev && uv cache clean
 RUN uv run playwright install --with-deps chromium
 
 RUN mkdir -p /app/snapshots /app/data \
