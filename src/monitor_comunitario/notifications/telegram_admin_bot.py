@@ -8,6 +8,7 @@ from typing import Any, Protocol
 import httpx
 
 from monitor_comunitario.notifications.telegram_provider import TelegramMessage
+from monitor_comunitario.notifications.telegram_security import telegram_request_error
 
 
 @dataclass(frozen=True)
@@ -186,8 +187,11 @@ class HttpTelegramTransport:
         if offset is not None:
             params["offset"] = offset
         async with httpx.AsyncClient(timeout=35.0) as client:
-            response = await client.get(self._url("getUpdates"), params=params)
-            response.raise_for_status()
+            try:
+                response = await client.get(self._url("getUpdates"), params=params)
+                response.raise_for_status()
+            except httpx.HTTPError:
+                raise telegram_request_error("getUpdates") from None
             payload = response.json()
         if not payload.get("ok") or not isinstance(payload.get("result"), list):
             raise ValueError("Invalid Telegram update response.")
@@ -210,15 +214,18 @@ class HttpTelegramTransport:
 
     async def send_message(self, chat_id: str, message: TelegramMessage) -> None:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(
-                self._url("sendMessage"),
-                json={
-                    "chat_id": chat_id,
-                    "text": message.text,
-                    "disable_web_page_preview": message.disable_web_page_preview,
-                },
-            )
-            response.raise_for_status()
+            try:
+                response = await client.post(
+                    self._url("sendMessage"),
+                    json={
+                        "chat_id": chat_id,
+                        "text": message.text,
+                        "disable_web_page_preview": message.disable_web_page_preview,
+                    },
+                )
+                response.raise_for_status()
+            except httpx.HTTPError:
+                raise telegram_request_error("sendMessage") from None
 
 
 class RegistrationAdminBotRunner:
