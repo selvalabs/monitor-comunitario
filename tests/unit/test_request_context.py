@@ -40,3 +40,15 @@ def test_client_ip_falls_back_when_forwarded_header_is_empty() -> None:
     request = make_request("10.0.0.2", "  ")
 
     assert get_client_ip(request, trusted_proxy_ips="10.0.0.2") == "10.0.0.2"
+
+
+def test_client_ip_falls_back_when_first_forwarded_value_is_invalid() -> None:
+    request = make_request("10.0.0.2", "not-an-ip, 203.0.113.10")
+
+    assert get_client_ip(request, trusted_proxy_ips="10.0.0.2") == "10.0.0.2"
+
+
+def test_client_ip_accepts_valid_ipv6_forwarded_value() -> None:
+    request = make_request("10.0.0.2", "2001:db8::10, 10.0.0.3")
+
+    assert get_client_ip(request, trusted_proxy_ips="10.0.0.2") == "2001:db8::10"
