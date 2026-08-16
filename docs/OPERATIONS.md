@@ -6,6 +6,17 @@ The project exposes public pages, public registration, member access and protect
 
 Operational endpoints are intentionally simple and frontend-friendly so they can be consumed by the internal admin dashboard.
 
+## Scraper de ocorrências emergenciais
+
+Para capturar o estado municipal atual do mapa público da Celesc, execute:
+
+    uv run monitor-comunitario scrape-emergency
+
+O comando consulta o feed público celgeoweb.celesc.com.br/json/mapa.js,
+salva um snapshot em SNAPSHOT_DIR e lista municípios com unidades sem energia.
+A fonte não informa bairro ou endereço individual; a integração com o ciclo de
+notificações deve manter essa limitação explícita.
+
 ## Public endpoints
 
 ### `GET /health`

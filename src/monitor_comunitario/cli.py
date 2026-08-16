@@ -9,6 +9,7 @@ from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import SessionLocal
 from monitor_comunitario.notifications.telegram_provider import TelegramNotificationProvider
+from monitor_comunitario.scraper.celesc_emergency import fetch_celesc_emergency_feed
 from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_municipality_pages,
     fetch_celesc_page,
@@ -198,6 +199,33 @@ def scrape_municipalities(
 
         for option in result.options[:10]:
             console.print(f"- {option.label} ({option.value})")
+
+
+@app.command("scrape-emergency")
+def scrape_emergency() -> None:
+    """Capture current municipal emergency outages from Celesc."""
+    import asyncio
+
+    settings = get_settings()
+    result = asyncio.run(
+        fetch_celesc_emergency_feed(
+            url=settings.celesc_emergency_url,
+            snapshot_dir=settings.snapshot_dir,
+            timeout_ms=settings.scraper_timeout_ms,
+        )
+    )
+
+    console.print("[bold green]Celesc emergency scrape completed[/bold green]")
+    console.print(f"URL: {result.url}")
+    console.print(f"Fetched at: {result.fetched_at.isoformat()}")
+    console.print(f"Active municipalities: {len(result.outages)}")
+    console.print(f"Snapshot: {result.snapshot_path}")
+
+    for outage in result.outages[:10]:
+        console.print(
+            f"- {outage.municipality}: {outage.affected_units} "
+            f"of {outage.total_units} units without energy"
+        )
 
 
 @app.command()
