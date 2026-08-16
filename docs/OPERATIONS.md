@@ -21,6 +21,25 @@ O worker executa a coleta emergencial separadamente do scraper de desligamentos
 programados. O intervalo padrão é de 5 minutos e pode ser alterado por
 EMERGENCY_SCHEDULER_INTERVAL_MINUTES.
 
+## Comunicados publicos da CASAN
+
+Para capturar comunicados publicos de falta de agua e abastecimento, execute:
+
+    uv run monitor-comunitario scrape-casan
+
+O comando consulta `https://e.casan.com.br/avisos/`, salva um snapshot em
+`SNAPSHOT_DIR` e extrai municipio, bairro, rua e ocorrencia quando esses campos
+estao presentes na tabela publica. A integracao nao usa login, CPF/CNPJ,
+matricula, fatura ou chamados privados da CASAN.
+
+O worker executa a coleta separadamente a cada 10 minutos por padrao. O
+intervalo pode ser alterado por `CASAN_SCHEDULER_INTERVAL_MINUTES`.
+
+Os comunicados sao cruzados com os enderecos cadastrados no Monitor e podem
+gerar alertas de possibilidade de impacto. Previsao de normalizacao nao e
+tratada como confirmacao; a notificacao de normalizacao e uma etapa separada e
+so deve ser criada quando o texto oficial trouxer evidencia suficiente.
+
 ## Public endpoints
 
 ### `GET /health`

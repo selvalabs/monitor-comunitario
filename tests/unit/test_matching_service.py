@@ -1,6 +1,6 @@
 from monitor_comunitario.db.models import OutageNotice, User
-from monitor_comunitario.matcher.scoring import MatchLevel
-from monitor_comunitario.services.matching import match_user_to_notice
+from monitor_comunitario.matcher.scoring import MatchLevel, MatchResult
+from monitor_comunitario.services.matching import build_notification_message, match_user_to_notice
 
 
 def test_match_user_to_notice_by_street() -> None:
@@ -98,3 +98,35 @@ def test_match_user_to_notice_requires_notification_approval() -> None:
 
     assert result.level == MatchLevel.NONE
     assert result.reason == "User is not approved for notifications."
+
+
+def test_build_notification_message_identifies_casan_alert() -> None:
+    user = User(
+        name="Carlos",
+        phone="5548999999999",
+        municipality="São José",
+        neighborhood="Kobrasol",
+        street="Rua Koesa",
+        notifications_approved=True,
+    )
+    notice = OutageNotice(
+        source="casan",
+        notice_type="water",
+        source_url="https://e.casan.com.br/avisos/",
+        municipality="São José",
+        neighborhood="Kobrasol",
+        street="Rua Koesa",
+        description="Rompimento de rede.",
+        raw_text="Rompimento de rede.",
+        content_hash="casan",
+    )
+
+    title, message = build_notification_message(
+        user,
+        notice,
+        MatchResult(MatchLevel.STREET, 100.0, "street"),
+    )
+
+    assert title == "Possível falta de água em São José"
+    assert "CASAN" in message
+    assert "Rompimento de rede." in message

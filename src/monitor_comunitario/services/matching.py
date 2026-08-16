@@ -176,6 +176,21 @@ def build_notification_message(
         )
         return title, message
 
+    if notice.notice_type == "water":
+        title = f"Possível falta de água em {notice.municipality}"
+        area_parts = [part for part in [notice.neighborhood, notice.street] if part]
+        area = " / ".join(area_parts) if area_parts else "área informada pela CASAN"
+        message = (
+            f"A CASAN publicou um comunicado que pode afetar o abastecimento "
+            f"no endereço de {user.name}.\n\n"
+            f"Município: {notice.municipality}\n"
+            f"Área: {area}\n"
+            f"Descrição:\n{notice.description or notice.raw_text}\n\n"
+            "Este alerta usa informações públicas da CASAN e não confirma impacto "
+            "em cada endereço. Consulte os canais oficiais da CASAN."
+        )
+        return title, message
+
     title = f"Possível desligamento em {notice.municipality}"
 
     area_parts = [part for part in [notice.neighborhood, notice.street] if part]
