@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     scheduler_hour: int = 6
     scheduler_minute: int = 0
+    emergency_scheduler_interval_minutes: int = 5
 
     notification_provider: str = "app"
 

@@ -15,6 +15,9 @@ from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_page,
 )
 from monitor_comunitario.scraper.parser import extract_relevant_outage_section
+from monitor_comunitario.services.emergency_monitoring import (
+    run_emergency_monitoring_cycle,
+)
 from monitor_comunitario.services.hermes_processing import process_created_hermes_events
 from monitor_comunitario.services.matching import run_matching_cycle
 from monitor_comunitario.services.monitoring import run_monitoring_cycle
@@ -228,6 +231,16 @@ def scrape_emergency() -> None:
         )
 
 
+@app.command("run-emergency")
+def run_emergency() -> None:
+    """Collect and match current emergency outages."""
+    result = run_emergency_monitoring_cycle()
+    console.print("[bold green]Emergency monitoring completed[/bold green]")
+    console.print(f"Active localities: {result.active_localities}")
+    console.print(f"New localities: {result.new_localities}")
+    console.print(f"Notifications created: {result.matching.notifications_created}")
+
+
 @app.command()
 def run_once(
     limit: int = typer.Option(
@@ -327,6 +340,7 @@ def worker() -> None:
     """Start the scheduled monitoring worker."""
     from apscheduler.schedulers.blocking import BlockingScheduler  # type: ignore[import-untyped]
     from apscheduler.triggers.cron import CronTrigger  # type: ignore[import-untyped]
+    from apscheduler.triggers.interval import IntervalTrigger  # type: ignore[import-untyped]
 
     settings = get_settings()
     timezone = ZoneInfo(settings.app_timezone)
@@ -344,11 +358,24 @@ def worker() -> None:
         id="daily-celesc-monitor",
         replace_existing=True,
     )
+    scheduler.add_job(
+        run_emergency_monitoring_cycle,
+        trigger=IntervalTrigger(
+            minutes=settings.emergency_scheduler_interval_minutes,
+            timezone=timezone,
+        ),
+        id="celesc-emergency-monitor",
+        replace_existing=True,
+    )
 
     console.print("[bold green]Worker started[/bold green]")
     console.print(
         f"Scheduled daily at {settings.scheduler_hour:02d}:"
         f"{settings.scheduler_minute:02d} {settings.app_timezone}"
+    )
+    console.print(
+        "Emergency collection every "
+        f"{settings.emergency_scheduler_interval_minutes} minutes"
     )
 
     scheduler.start()

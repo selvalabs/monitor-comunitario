@@ -1,9 +1,11 @@
+from datetime import UTC, datetime
 from hashlib import sha256
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from monitor_comunitario.db.models import OutageNotice
+from monitor_comunitario.scraper.celesc_emergency import EmergencyOutage
 from monitor_comunitario.scraper.parser import ParsedOutageNotice
 
 
@@ -83,3 +85,74 @@ def persist_parsed_notices(
             created_count += 1
 
     return notices, created_count
+
+
+def persist_emergency_outages(
+    session: Session,
+    outages: list[EmergencyOutage],
+    source_url: str,
+    observed_at: datetime | None = None,
+) -> tuple[list[OutageNotice], int]:
+    """Upsert current emergency outages and resolve missing localities."""
+    seen_at = observed_at or datetime.now(UTC)
+    source_keys = {
+        f"celesc-emergency:{outage.municipality_id}:{outage.neighborhood_id}"
+        for outage in outages
+    }
+    existing = {
+        notice.source_key: notice
+        for notice in session.scalars(
+            select(OutageNotice).where(OutageNotice.notice_type == "emergency")
+        ).all()
+        if notice.source_key
+    }
+
+    persisted: list[OutageNotice] = []
+    created_count = 0
+
+    for outage in outages:
+        source_key = f"celesc-emergency:{outage.municipality_id}:{outage.neighborhood_id}"
+        notice = existing.get(source_key)
+        description = (
+            f"Ocorrência emergencial: {outage.affected_units} unidades "
+            f"sem energia na localidade informada pela Celesc."
+        )
+
+        if notice is None:
+            notice = OutageNotice(
+                source="celesc-emergency",
+                notice_type="emergency",
+                source_url=source_url,
+                source_key=source_key,
+                municipality=outage.municipality,
+                neighborhood=outage.neighborhood,
+                description=description,
+                raw_text=outage.raw_text,
+                content_hash=sha256(source_key.encode("utf-8")).hexdigest(),
+                is_active=True,
+                last_seen_at=seen_at,
+            )
+            session.add(notice)
+            created_count += 1
+        else:
+            notice.source_url = source_url
+            notice.municipality = outage.municipality
+            notice.neighborhood = outage.neighborhood
+            notice.description = description
+            notice.raw_text = outage.raw_text
+            notice.is_active = True
+            notice.last_seen_at = seen_at
+            notice.resolved_at = None
+
+        persisted.append(notice)
+
+    for source_key, notice in existing.items():
+        if source_key not in source_keys and notice.is_active:
+            notice.is_active = False
+            notice.resolved_at = seen_at
+
+    session.commit()
+    for notice in persisted:
+        session.refresh(notice)
+
+    return persisted, created_count

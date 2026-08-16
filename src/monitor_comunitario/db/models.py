@@ -77,13 +77,18 @@ class OutageNotice(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     source: Mapped[str] = mapped_column(String(80), default="celesc")
+    notice_type: Mapped[str] = mapped_column(String(40), default="scheduled", index=True)
     source_url: Mapped[str] = mapped_column(String(500))
+    source_key: Mapped[str | None] = mapped_column(String(200), unique=True, nullable=True)
     municipality: Mapped[str] = mapped_column(String(120), index=True)
     neighborhood: Mapped[str] = mapped_column(String(160), default="")
     street: Mapped[str] = mapped_column(String(200), default="")
     description: Mapped[str] = mapped_column(Text, default="")
     raw_text: Mapped[str] = mapped_column(Text, default="")
     content_hash: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
