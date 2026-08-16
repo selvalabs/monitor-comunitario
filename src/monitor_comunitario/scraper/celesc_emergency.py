@@ -8,9 +8,10 @@ from typing import Any
 
 import httpx
 
-EMERGENCY_FEED_URL = "https://celgeoweb.celesc.com.br/json/mapa.js"
+EMERGENCY_FEED_URL = "https://celgeoweb.celesc.com.br/json/tabelas.js"
 _ASSIGNMENT_PATTERN = re.compile(
-    r"^\s*var\s+mapaIndicador\s*=\s*(?P<payload>\{.*\})\s*;?\s*$",
+    r"^\s*var\s+(?:mapaIndicador|visaoGeralPublico)\s*=\s*"
+    r"(?P<payload>\{.*\})\s*;?\s*$",
     re.DOTALL,
 )
 _MUNICIPALITY_PATTERN = re.compile(r"<th[^>]*>\s*(?P<value>[^<]+?)\s*</th>", re.IGNORECASE)
@@ -30,6 +31,8 @@ class EmergencyOutage:
 
     municipality: str
     municipality_id: int
+    neighborhood: str
+    neighborhood_id: int
     affected_units: int
     total_units: int
     raw_text: str
@@ -57,7 +60,7 @@ def _visible_text(raw_text: str) -> str:
 def _extract_payload(text: str) -> dict[str, Any]:
     match = _ASSIGNMENT_PATTERN.match(text)
     if match is None:
-        raise ValueError("mapaIndicador assignment not found")
+        raise ValueError("Celesc emergency feed assignment not found")
 
     payload = re.sub(r"\[\s*,", "[", match.group("payload"))
 
@@ -66,15 +69,67 @@ def _extract_payload(text: str) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise ValueError("mapaIndicador payload is not valid JSON") from exc
 
-    if not isinstance(parsed, dict) or not isinstance(parsed.get("municipios"), list):
-        raise ValueError("mapaIndicador payload must contain municipios")
+    if not isinstance(parsed, dict):
+        raise ValueError("Celesc emergency feed payload must be an object")
 
     return parsed
+
+
+def parse_emergency_details_feed(text: str) -> list[EmergencyOutage]:
+    """Parse active accidental outages grouped by municipality and neighborhood."""
+    payload = _extract_payload(text)
+    regionals = payload.get("REGIONAIS")
+    if not isinstance(regionals, list):
+        raise ValueError("visaoGeralPublico payload must contain REGIONAIS")
+
+    outages: list[EmergencyOutage] = []
+    for regional in regionals:
+        if not isinstance(regional, dict):
+            raise ValueError("REGIONAIS entries must be objects")
+
+        cities = regional.get("CIDADES", [])
+        if not isinstance(cities, list):
+            raise ValueError("CIDADES entries must be a list")
+
+        for city in cities:
+            if not isinstance(city, dict):
+                raise ValueError("CIDADES entries must be objects")
+
+            neighborhoods = city.get("BAIRROS", [])
+            if not isinstance(neighborhoods, list):
+                raise ValueError("BAIRROS entries must be a list")
+
+            for neighborhood in neighborhoods:
+                if not isinstance(neighborhood, dict):
+                    raise ValueError("BAIRROS entries must be objects")
+
+                affected_units = _parse_count(str(neighborhood["QUANTIDADE_ACIDENTAL"]))
+                if affected_units <= 0:
+                    continue
+
+                municipality = str(city["CIDADE"]).strip()
+                locality = str(neighborhood["BAIRRO"]).strip()
+                raw_text = f"{municipality} / {locality}"
+                outages.append(
+                    EmergencyOutage(
+                        municipality=municipality,
+                        municipality_id=int(city["ID_CIDADE"]),
+                        neighborhood=locality,
+                        neighborhood_id=int(neighborhood["ID_BAIRRO"]),
+                        affected_units=affected_units,
+                        total_units=_parse_count(str(neighborhood["QUANTIDADE_TOTAL"])),
+                        raw_text=raw_text,
+                    )
+                )
+
+    return outages
 
 
 def parse_emergency_feed(text: str) -> list[EmergencyOutage]:
     """Parse active municipal outages without executing feed JavaScript."""
     payload = _extract_payload(text)
+    if not isinstance(payload.get("municipios"), list):
+        raise ValueError("mapaIndicador payload must contain municipios")
     outages: list[EmergencyOutage] = []
 
     for item in payload["municipios"]:
@@ -101,9 +156,11 @@ def parse_emergency_feed(text: str) -> list[EmergencyOutage]:
 
         outages.append(
             EmergencyOutage(
-                municipality=municipality_match.group("value").strip(),
-                municipality_id=municipality_id,
-                affected_units=affected_units,
+            municipality=municipality_match.group("value").strip(),
+            municipality_id=municipality_id,
+            neighborhood="",
+            neighborhood_id=0,
+            affected_units=affected_units,
                 total_units=_parse_count(total_match.group("value")),
                 raw_text=raw_text,
             )
@@ -126,7 +183,7 @@ async def fetch_celesc_emergency_feed(
     outages = parse_emergency_feed(response.text)
     snapshot_path = Path(snapshot_dir)
     snapshot_path.mkdir(parents=True, exist_ok=True)
-    target = snapshot_path / "latest-celesc-emergency-map.js"
+    target = snapshot_path / "latest-celesc-emergency-details.js"
     target.write_text(response.text, encoding="utf-8")
 
     return EmergencyScrapeResult(
