@@ -135,6 +135,7 @@ def persist_emergency_outages(
             )
             session.add(notice)
             created_count += 1
+            existing[source_key] = notice
         else:
             notice.source_url = source_url
             notice.municipality = outage.municipality
@@ -210,6 +211,7 @@ def persist_casan_alerts(
             )
             session.add(notice)
             created_count += 1
+            existing[source_key] = notice
         else:
             notice.source_url = source_url
             notice.municipality = alert.municipality
