@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.session import SessionLocal
 from monitor_comunitario.scraper.casan_alerts import fetch_casan_alerts
-from monitor_comunitario.services.matching import MatchingSummary, run_matching_cycle
+from monitor_comunitario.services.matching import (
+    MatchingSummary,
+    create_resolution_notifications,
+    run_matching_cycle,
+)
 from monitor_comunitario.services.outage_notices import persist_casan_alerts
 
 
@@ -15,6 +19,7 @@ class CasanMonitoringResult:
     alerts_found: int
     new_alerts: int
     matching: MatchingSummary
+    resolution_notifications_created: int
 
 
 def run_casan_monitoring_cycle() -> CasanMonitoringResult:
@@ -29,16 +34,20 @@ def run_casan_monitoring_cycle() -> CasanMonitoringResult:
     )
 
     with SessionLocal() as session:
-        _, new_alerts = persist_casan_alerts(
+        _, new_alerts, resolved_alerts = persist_casan_alerts(
             session=session,
             alerts=scrape_result.alerts,
             source_url=scrape_result.url,
             observed_at=scrape_result.fetched_at,
         )
         matching = run_matching_cycle(session)
+        resolution_notifications_created = sum(
+            create_resolution_notifications(session, notice) for notice in resolved_alerts
+        )
 
     return CasanMonitoringResult(
         alerts_found=len(scrape_result.alerts),
         new_alerts=new_alerts,
         matching=matching,
+        resolution_notifications_created=resolution_notifications_created,
     )

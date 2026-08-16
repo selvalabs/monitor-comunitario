@@ -111,15 +111,17 @@ def test_persist_casan_alerts_is_idempotent_and_does_not_resolve_absence() -> No
     )
 
     with testing_session_local() as session:
-        first, first_created = persist_casan_alerts(
+        first, first_created, first_resolved = persist_casan_alerts(
             session, [alert, alert], "https://e.casan.com.br/avisos/"
         )
-        second, second_created = persist_casan_alerts(
+        second, second_created, second_resolved = persist_casan_alerts(
             session, [], "https://e.casan.com.br/avisos/"
         )
 
     assert first_created == 1
     assert second_created == 0
+    assert first_resolved == []
+    assert second_resolved == []
     assert first[0].source == "casan"
     assert first[0].notice_type == "water"
     assert first[0].is_active is True
@@ -141,10 +143,46 @@ def test_persist_casan_normalization_confirmation_is_not_active_alert() -> None:
     )
 
     with testing_session_local() as session:
-        notices, created = persist_casan_alerts(
+        notices, created, resolved = persist_casan_alerts(
             session, [alert], "https://e.casan.com.br/avisos/"
         )
 
     assert created == 1
+    assert resolved == []
+    assert notices[0].is_active is False
+    assert notices[0].resolved_at is not None
+
+
+def test_persist_casan_alert_reports_active_to_normalized_transition() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    testing_session_local = sessionmaker(bind=engine, expire_on_commit=False)
+    Base.metadata.create_all(bind=engine)
+    source_url = "https://e.casan.com.br/avisos/"
+    active_alert = CasanWaterAlert(
+        notified_at="16/08/2026 10:30",
+        municipality="SÃ£o JosÃ©",
+        neighborhood="Barreiros",
+        street="Todos",
+        occurrence="Rompimento de rede de distribuiÃ§Ã£o.",
+        raw_text="MunicÃ­pio(s): SÃ£o JosÃ©",
+        normalization_confirmed=False,
+    )
+    normalized_alert = CasanWaterAlert(
+        **{
+            **active_alert.__dict__,
+            "occurrence": "O conserto foi concluÃ­do e o sistema foi aberto.",
+            "normalization_confirmed": True,
+        }
+    )
+
+    with testing_session_local() as session:
+        persist_casan_alerts(session, [active_alert], source_url)
+        notices, created, resolved = persist_casan_alerts(
+            session, [normalized_alert], source_url
+        )
+
+    assert created == 0
+    assert len(resolved) == 1
+    assert resolved[0].id == notices[0].id
     assert notices[0].is_active is False
     assert notices[0].resolved_at is not None

@@ -219,6 +219,22 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Espacos de marketing foram preservados como um slot lateral/discreto e uma faixa horizontal apos o conteudo, sem competir com o cadastro no topo.
 - Validacao atual: Ruff e Mypy limpos; 151 testes aprovados; JavaScript verificado com `node --check`; capturas locais revisadas em desktop e mobile, incluindo tema escuro e ingles sem overflow.
 
+## Atualizacao 2026-08-16 - notificacao de normalizacao
+
+- Issue: #189. Branch: `feat/notification-normalization`.
+- Implementada a notificacao de normalizacao somente quando a fonte CASAN confirma
+  explicitamente a conclusao/normalizacao; o desaparecimento de um alerta nao gera
+  notificacao.
+- A notificacao inicial e a de normalizacao agora possuem tipos distintos e podem
+  coexistir por usuario, alerta e canal. A normalizacao so e criada para moradores
+  que receberam o alerta inicial, estao ativos e autorizaram notificacoes.
+- A migration `20260816_0007` adiciona `notification_kind` e atualiza a restricao
+  de unicidade. Nenhuma credencial ou dado pessoal foi registrado neste handoff.
+- Validacao local: `172 passed`, Ruff em `src`, `tests` e migration limpo, Mypy
+  limpo, Alembic em `20260816_0007 (head)`.
+- Celesc permanece sem notificacao de normalizacao enquanto sua fonte publica nao
+  fornecer uma confirmacao explicita equivalente.
+
 ## Template para futuras atualizacoes
 
 ## Atualizacao de hardening 2026-08-12

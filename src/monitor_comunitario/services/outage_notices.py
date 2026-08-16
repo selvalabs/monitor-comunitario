@@ -165,7 +165,7 @@ def persist_casan_alerts(
     alerts: list[CasanWaterAlert],
     source_url: str,
     observed_at: datetime | None = None,
-) -> tuple[list[OutageNotice], int]:
+) -> tuple[list[OutageNotice], int, list[OutageNotice]]:
     """Upsert public CASAN alerts without resolving absent rows implicitly."""
     seen_at = observed_at or datetime.now(UTC)
     existing = {
@@ -177,6 +177,7 @@ def persist_casan_alerts(
     }
 
     persisted: list[OutageNotice] = []
+    resolved: list[OutageNotice] = []
     created_count = 0
 
     for alert in alerts:
@@ -213,6 +214,7 @@ def persist_casan_alerts(
             created_count += 1
             existing[source_key] = notice
         else:
+            was_active = notice.is_active
             notice.source_url = source_url
             notice.municipality = alert.municipality
             notice.neighborhood = alert.neighborhood
@@ -223,6 +225,8 @@ def persist_casan_alerts(
             if not is_active:
                 notice.is_active = False
                 notice.resolved_at = notice.resolved_at or seen_at
+                if was_active:
+                    resolved.append(notice)
             elif notice.resolved_at is None:
                 notice.is_active = True
 
@@ -232,4 +236,4 @@ def persist_casan_alerts(
     for notice in persisted:
         session.refresh(notice)
 
-    return persisted, created_count
+    return persisted, created_count, resolved
