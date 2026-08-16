@@ -3,7 +3,14 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from monitor_comunitario.db.models import Notification, OutageNotice, User, UserOutageMatch
+from monitor_comunitario.db.models import (
+    Notification,
+    NotificationKind,
+    NotificationStatus,
+    OutageNotice,
+    User,
+    UserOutageMatch,
+)
 from monitor_comunitario.matcher.normalizer import (
     normalize_municipality,
     normalize_neighborhood,
@@ -215,12 +222,14 @@ def get_existing_notification(
     user_id: int,
     outage_notice_id: int,
     channel: str = "app",
+    notification_kind: str = NotificationKind.ALERT.value,
 ) -> Notification | None:
     """Return an existing notification for a user/notice/channel."""
     statement = select(Notification).where(
         Notification.user_id == user_id,
         Notification.outage_notice_id == outage_notice_id,
         Notification.channel == channel,
+        Notification.notification_kind == notification_kind,
     )
     return session.scalar(statement)
 
@@ -243,6 +252,7 @@ def create_app_notification(
         user_id=user.id,
         outage_notice_id=notice.id,
         channel="app",
+        notification_kind=NotificationKind.ALERT.value,
         status="created",
         title=title,
         message=message,
@@ -270,6 +280,99 @@ def create_app_notification(
     )
 
     return notification, True
+
+
+def build_resolution_notification_message(
+    user: User,
+    notice: OutageNotice,
+) -> tuple[str, str]:
+    """Build a resolution message only after explicit source confirmation."""
+    if notice.source == "casan":
+        title = f"Abastecimento normalizado em {notice.municipality}"
+        provider = "A CASAN informou a normalização do abastecimento"
+    else:
+        title = f"Fornecimento normalizado em {notice.municipality}"
+        provider = "A Celesc informou a normalização do fornecimento de energia"
+
+    area = " / ".join(part for part in [notice.neighborhood, notice.street] if part)
+    message = (
+        f"{provider} que podia afetar o endereço cadastrado para {user.name}.\n\n"
+        f"Município: {notice.municipality}\n"
+        f"Área: {area or 'não informada'}\n\n"
+        "A recuperação pode ocorrer de forma gradual. Consulte os canais oficiais "
+        "para confirmar a situação no seu endereço."
+    )
+    return title, message
+
+
+def create_resolution_notifications(
+    session: Session,
+    notice: OutageNotice,
+) -> int:
+    """Notify only residents who received this notice's initial alert."""
+    if notice.is_active or notice.resolved_at is None:
+        return 0
+
+    matches = session.scalars(
+        select(UserOutageMatch).where(UserOutageMatch.outage_notice_id == notice.id)
+    ).all()
+    created_count = 0
+
+    for match in matches:
+        user = session.get(User, match.user_id)
+        if user is None or not user.is_active or not user.notifications_approved:
+            continue
+
+        initial = get_existing_notification(
+            session,
+            user.id,
+            notice.id,
+            notification_kind=NotificationKind.ALERT.value,
+        )
+        if initial is None:
+            continue
+
+        existing = get_existing_notification(
+            session,
+            user.id,
+            notice.id,
+            notification_kind=NotificationKind.RESOLUTION.value,
+        )
+        if existing is not None:
+            continue
+
+        title, message = build_resolution_notification_message(user, notice)
+        notification = Notification(
+            user_id=user.id,
+            outage_notice_id=notice.id,
+            channel="app",
+            notification_kind=NotificationKind.RESOLUTION.value,
+            status=NotificationStatus.CREATED.value,
+            title=title,
+            message=message,
+        )
+        session.add(notification)
+        session.commit()
+        session.refresh(notification)
+
+        create_hermes_event(
+            session=session,
+            event_type="notification_ready",
+            channel="app",
+            recipient_phone=user.phone,
+            intent="ALERT_EXPLANATION",
+            template_key="alert_explanation_v1",
+            payload={
+                "notification_id": notification.id,
+                "user_id": user.id,
+                "outage_notice_id": notice.id,
+                "notification_kind": NotificationKind.RESOLUTION.value,
+                "source": notice.source,
+            },
+        )
+        created_count += 1
+
+    return created_count
 
 
 def run_matching_cycle(session: Session) -> MatchingSummary:

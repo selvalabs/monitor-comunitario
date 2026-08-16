@@ -275,6 +275,10 @@ def run_casan() -> None:
     console.print(f"Alerts found: {result.alerts_found}")
     console.print(f"New alerts: {result.new_alerts}")
     console.print(f"Notifications created: {result.matching.notifications_created}")
+    console.print(
+        "Resolution notifications created: "
+        f"{result.resolution_notifications_created}"
+    )
 
 
 @app.command()

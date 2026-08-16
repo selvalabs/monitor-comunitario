@@ -10,6 +10,7 @@ class NotificationRead(BaseModel):
     user_id: int
     outage_notice_id: int
     channel: str
+    notification_kind: str
     status: str
     title: str
     message: str

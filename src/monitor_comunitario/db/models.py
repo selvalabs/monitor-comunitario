@@ -31,6 +31,11 @@ class NotificationStatus(StrEnum):
     FAILED = "failed"
 
 
+class NotificationKind(StrEnum):
+    ALERT = "alert"
+    RESOLUTION = "resolution"
+
+
 class MonitoringRunStatus(StrEnum):
     RUNNING = "running"
     SUCCESS = "success"
@@ -118,7 +123,8 @@ class Notification(Base):
             "user_id",
             "outage_notice_id",
             "channel",
-            name="uq_notification_user_notice_channel",
+            "notification_kind",
+            name="uq_notification_user_notice_channel_kind",
         ),
     )
 
@@ -126,6 +132,9 @@ class Notification(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     outage_notice_id: Mapped[int] = mapped_column(ForeignKey("outage_notices.id"), index=True)
     channel: Mapped[str] = mapped_column(String(40), default="app")
+    notification_kind: Mapped[str] = mapped_column(
+        String(40), default=NotificationKind.ALERT.value, index=True
+    )
     status: Mapped[str] = mapped_column(String(40), default=NotificationStatus.CREATED.value)
     title: Mapped[str] = mapped_column(String(200))
     message: Mapped[str] = mapped_column(Text)
