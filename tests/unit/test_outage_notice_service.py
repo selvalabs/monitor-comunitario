@@ -112,7 +112,7 @@ def test_persist_casan_alerts_is_idempotent_and_does_not_resolve_absence() -> No
 
     with testing_session_local() as session:
         first, first_created = persist_casan_alerts(
-            session, [alert], "https://e.casan.com.br/avisos/"
+            session, [alert, alert], "https://e.casan.com.br/avisos/"
         )
         second, second_created = persist_casan_alerts(
             session, [], "https://e.casan.com.br/avisos/"
