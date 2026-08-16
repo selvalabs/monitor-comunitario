@@ -2,10 +2,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from monitor_comunitario.db.models import Base
+from monitor_comunitario.scraper.casan_alerts import CasanWaterAlert
 from monitor_comunitario.scraper.celesc_emergency import EmergencyOutage
 from monitor_comunitario.scraper.parser import ParsedOutageNotice
 from monitor_comunitario.services.outage_notices import (
     build_notice_content_hash,
+    persist_casan_alerts,
     persist_emergency_outages,
     persist_parsed_notice,
 )
@@ -92,3 +94,57 @@ def test_persist_emergency_outages_updates_and_resolves_by_locality() -> None:
     assert second[0].description.startswith("Ocorrência emergencial: 9")
     assert second[0].is_active is False
     assert second[0].resolved_at is not None
+
+
+def test_persist_casan_alerts_is_idempotent_and_does_not_resolve_absence() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    testing_session_local = sessionmaker(bind=engine, expire_on_commit=False)
+    Base.metadata.create_all(bind=engine)
+    alert = CasanWaterAlert(
+        notified_at="16/08/2026 10:30",
+        municipality="São José",
+        neighborhood="Barreiros",
+        street="Todos",
+        occurrence="Rompimento de rede de distribuição.",
+        raw_text="Município(s): São José",
+        normalization_confirmed=False,
+    )
+
+    with testing_session_local() as session:
+        first, first_created = persist_casan_alerts(
+            session, [alert], "https://e.casan.com.br/avisos/"
+        )
+        second, second_created = persist_casan_alerts(
+            session, [], "https://e.casan.com.br/avisos/"
+        )
+
+    assert first_created == 1
+    assert second_created == 0
+    assert first[0].source == "casan"
+    assert first[0].notice_type == "water"
+    assert first[0].is_active is True
+    assert second == []
+
+
+def test_persist_casan_normalization_confirmation_is_not_active_alert() -> None:
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    testing_session_local = sessionmaker(bind=engine, expire_on_commit=False)
+    Base.metadata.create_all(bind=engine)
+    alert = CasanWaterAlert(
+        notified_at="16/08/2026 10:30",
+        municipality="São José",
+        neighborhood="Barreiros",
+        street="Todos",
+        occurrence="O conserto foi concluído e o sistema foi aberto.",
+        raw_text="Município(s): São José",
+        normalization_confirmed=True,
+    )
+
+    with testing_session_local() as session:
+        notices, created = persist_casan_alerts(
+            session, [alert], "https://e.casan.com.br/avisos/"
+        )
+
+    assert created == 1
+    assert notices[0].is_active is False
+    assert notices[0].resolved_at is not None

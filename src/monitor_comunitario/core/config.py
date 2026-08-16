@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     celesc_emergency_url: str = (
         "https://celgeoweb.celesc.com.br/json/mapa.js"
     )
+    casan_alerts_url: str = "https://e.casan.com.br/avisos/"
     scraper_headless: bool = True
     scraper_timeout_ms: int = 30_000
     snapshot_dir: str = "./snapshots"
@@ -56,6 +57,7 @@ class Settings(BaseSettings):
     scheduler_hour: int = 6
     scheduler_minute: int = 0
     emergency_scheduler_interval_minutes: int = 5
+    casan_scheduler_interval_minutes: int = 10
 
     notification_provider: str = "app"
 

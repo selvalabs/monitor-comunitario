@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from monitor_comunitario.db.models import OutageNotice
+from monitor_comunitario.scraper.casan_alerts import CasanWaterAlert
 from monitor_comunitario.scraper.celesc_emergency import EmergencyOutage
 from monitor_comunitario.scraper.parser import ParsedOutageNotice
 
@@ -150,6 +151,80 @@ def persist_emergency_outages(
         if source_key not in source_keys and notice.is_active:
             notice.is_active = False
             notice.resolved_at = seen_at
+
+    session.commit()
+    for notice in persisted:
+        session.refresh(notice)
+
+    return persisted, created_count
+
+
+def persist_casan_alerts(
+    session: Session,
+    alerts: list[CasanWaterAlert],
+    source_url: str,
+    observed_at: datetime | None = None,
+) -> tuple[list[OutageNotice], int]:
+    """Upsert public CASAN alerts without resolving absent rows implicitly."""
+    seen_at = observed_at or datetime.now(UTC)
+    existing = {
+        notice.source_key: notice
+        for notice in session.scalars(
+            select(OutageNotice).where(OutageNotice.source == "casan")
+        ).all()
+        if notice.source_key
+    }
+
+    persisted: list[OutageNotice] = []
+    created_count = 0
+
+    for alert in alerts:
+        key_input = "|".join(
+            [
+                alert.notified_at,
+                alert.municipality.casefold(),
+                alert.neighborhood.casefold(),
+                alert.street.casefold(),
+            ]
+        )
+        source_key = f"casan-water:{sha256(key_input.encode('utf-8')).hexdigest()}"
+        notice = existing.get(source_key)
+        is_active = not alert.normalization_confirmed
+        description = f"Comunicado CASAN: {alert.occurrence}"
+
+        if notice is None:
+            notice = OutageNotice(
+                source="casan",
+                notice_type="water",
+                source_url=source_url,
+                source_key=source_key,
+                municipality=alert.municipality,
+                neighborhood=alert.neighborhood,
+                street=alert.street,
+                description=description,
+                raw_text=alert.raw_text,
+                content_hash=sha256(source_key.encode("utf-8")).hexdigest(),
+                is_active=is_active,
+                last_seen_at=seen_at,
+                resolved_at=seen_at if not is_active else None,
+            )
+            session.add(notice)
+            created_count += 1
+        else:
+            notice.source_url = source_url
+            notice.municipality = alert.municipality
+            notice.neighborhood = alert.neighborhood
+            notice.street = alert.street
+            notice.description = description
+            notice.raw_text = alert.raw_text
+            notice.last_seen_at = seen_at
+            if not is_active:
+                notice.is_active = False
+                notice.resolved_at = notice.resolved_at or seen_at
+            elif notice.resolved_at is None:
+                notice.is_active = True
+
+        persisted.append(notice)
 
     session.commit()
     for notice in persisted:

@@ -9,12 +9,14 @@ from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
 from monitor_comunitario.db.session import SessionLocal
 from monitor_comunitario.notifications.telegram_provider import TelegramNotificationProvider
+from monitor_comunitario.scraper.casan_alerts import fetch_casan_alerts
 from monitor_comunitario.scraper.celesc_emergency import fetch_celesc_emergency_feed
 from monitor_comunitario.scraper.celesc_page import (
     fetch_celesc_municipality_pages,
     fetch_celesc_page,
 )
 from monitor_comunitario.scraper.parser import extract_relevant_outage_section
+from monitor_comunitario.services.casan_monitoring import run_casan_monitoring_cycle
 from monitor_comunitario.services.emergency_monitoring import (
     run_emergency_monitoring_cycle,
 )
@@ -241,6 +243,40 @@ def run_emergency() -> None:
     console.print(f"Notifications created: {result.matching.notifications_created}")
 
 
+@app.command("scrape-casan")
+def scrape_casan() -> None:
+    """Capture public CASAN water-supply alerts."""
+    import asyncio
+
+    settings = get_settings()
+    result = asyncio.run(
+        fetch_casan_alerts(
+            url=settings.casan_alerts_url,
+            snapshot_dir=settings.snapshot_dir,
+            timeout_ms=settings.scraper_timeout_ms,
+        )
+    )
+
+    console.print("[bold green]CASAN alert scrape completed[/bold green]")
+    console.print(f"URL: {result.url}")
+    console.print(f"Fetched at: {result.fetched_at.isoformat()}")
+    console.print(f"Alerts found: {len(result.alerts)}")
+    console.print(f"Snapshot: {result.snapshot_path}")
+
+    for alert in result.alerts[:10]:
+        console.print(f"- {alert.municipality} / {alert.neighborhood}: {alert.occurrence}")
+
+
+@app.command("run-casan")
+def run_casan() -> None:
+    """Collect and match public CASAN water-supply alerts."""
+    result = run_casan_monitoring_cycle()
+    console.print("[bold green]CASAN monitoring completed[/bold green]")
+    console.print(f"Alerts found: {result.alerts_found}")
+    console.print(f"New alerts: {result.new_alerts}")
+    console.print(f"Notifications created: {result.matching.notifications_created}")
+
+
 @app.command()
 def run_once(
     limit: int = typer.Option(
@@ -367,6 +403,15 @@ def worker() -> None:
         id="celesc-emergency-monitor",
         replace_existing=True,
     )
+    scheduler.add_job(
+        run_casan_monitoring_cycle,
+        trigger=IntervalTrigger(
+            minutes=settings.casan_scheduler_interval_minutes,
+            timezone=timezone,
+        ),
+        id="casan-water-monitor",
+        replace_existing=True,
+    )
 
     console.print("[bold green]Worker started[/bold green]")
     console.print(
@@ -376,6 +421,10 @@ def worker() -> None:
     console.print(
         "Emergency collection every "
         f"{settings.emergency_scheduler_interval_minutes} minutes"
+    )
+    console.print(
+        "CASAN water alerts every "
+        f"{settings.casan_scheduler_interval_minutes} minutes"
     )
 
     scheduler.start()
