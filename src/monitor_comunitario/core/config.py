@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     email_ingress_max_raw_bytes: int = 10 * 1024 * 1024
 
     celesc_outages_url: str = "https://www.celesc.com.br/avisos-de-desligamentos"
+    celesc_emergency_url: str = (
+        "https://celgeoweb.celesc.com.br/json/mapa.js"
+    )
     scraper_headless: bool = True
     scraper_timeout_ms: int = 30_000
     snapshot_dir: str = "./snapshots"
@@ -52,6 +55,7 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     scheduler_hour: int = 6
     scheduler_minute: int = 0
+    emergency_scheduler_interval_minutes: int = 5
 
     notification_provider: str = "app"
 

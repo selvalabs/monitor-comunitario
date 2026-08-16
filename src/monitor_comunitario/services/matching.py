@@ -163,6 +163,19 @@ def build_notification_message(
     result: MatchResult,
 ) -> tuple[str, str]:
     """Build an in-app notification title and message."""
+    if notice.notice_type == "emergency":
+        title = f"Ocorrência emergencial em {notice.municipality}"
+        message = (
+            f"A Celesc informa uma ocorrência emergencial que pode afetar "
+            f"o endereço de {user.name}.\n\n"
+            f"Município: {notice.municipality}\n"
+            f"Localidade: {notice.neighborhood or 'não informada'}\n"
+            f"Descrição: {notice.description or notice.raw_text}\n\n"
+            "A ocorrência é informada por município/localidade e não confirma "
+            "impacto em cada endereço. Consulte os canais oficiais da Celesc."
+        )
+        return title, message
+
     title = f"Possível desligamento em {notice.municipality}"
 
     area_parts = [part for part in [notice.neighborhood, notice.street] if part]
@@ -254,7 +267,9 @@ def run_matching_cycle(session: Session) -> MatchingSummary:
             )
         ).all()
     )
-    notices = list(session.scalars(select(OutageNotice)).all())
+    notices = list(
+        session.scalars(select(OutageNotice).where(OutageNotice.is_active.is_(True))).all()
+    )
 
     matches_created = 0
     notifications_created = 0
