@@ -23,6 +23,8 @@ def test_home_page_returns_public_frontend() -> None:
     assert 'data-i18n="public.hero.title"' in response.text
     assert 'data-ad-slot="sidebar"' in response.text
     assert 'data-ad-slot="footer"' in response.text
+    assert 'data-alert-source="celesc_scheduled"' in response.text
+    assert 'data-alert-source="defesa_civil_sc"' in response.text
 
 
 def test_home_page_emphasizes_registration_and_member_access_paths() -> None:

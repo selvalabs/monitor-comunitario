@@ -9,7 +9,7 @@ from monitor_comunitario.api.internal import app as internal_app
 from monitor_comunitario.api.main import app
 from monitor_comunitario.core.config import get_settings
 from monitor_comunitario.db.init_db import init_db
-from monitor_comunitario.db.models import HermesEvent, User
+from monitor_comunitario.db.models import HermesEvent, User, UserAlertPreference
 from monitor_comunitario.db.session import SessionLocal
 
 ADMIN_API_KEY = "test-admin-key"
@@ -67,6 +67,37 @@ def test_create_and_get_user(client: TestClient) -> None:
 
     assert admin_get_response.status_code == 200
     assert admin_get_response.json()["id"] == created["id"]
+
+
+def test_create_user_persists_selected_alert_sources(client: TestClient) -> None:
+    response = client.post(
+        "/users",
+        json={
+            "name": "Preferencias User",
+            "phone": "5548999988888",
+            "municipality": "FlorianÃ³polis",
+            "alert_preferences": {
+                "celesc_scheduled": True,
+                "celesc_emergency": False,
+                "casan_water": False,
+                "defesa_civil_sc": True,
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    user_id = response.json()["id"]
+    with SessionLocal() as session:
+        rows = session.scalars(
+            select(UserAlertPreference).where(UserAlertPreference.user_id == user_id)
+        ).all()
+
+    assert {row.source_key: row.enabled for row in rows} == {
+        "celesc_scheduled": True,
+        "celesc_emergency": False,
+        "casan_water": False,
+        "defesa_civil_sc": True,
+    }
 
 
 def test_create_user_emits_pending_approval_hermes_event(client: TestClient) -> None:

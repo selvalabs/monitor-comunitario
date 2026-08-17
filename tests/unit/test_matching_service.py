@@ -130,3 +130,35 @@ def test_build_notification_message_identifies_casan_alert() -> None:
     assert title == "Possível falta de água em São José"
     assert "CASAN" in message
     assert "Rompimento de rede." in message
+
+
+def test_match_user_to_notice_respects_alert_source_preference() -> None:
+    user = User(
+        name="Carlos",
+        phone="5548999999999",
+        municipality="SÃ£o JosÃ©",
+        neighborhood="Kobrasol",
+        notifications_approved=True,
+    )
+    notice = OutageNotice(
+        source="casan",
+        notice_type="water",
+        source_url="https://e.casan.com.br/avisos/",
+        municipality="SÃ£o JosÃ©",
+        neighborhood="Kobrasol",
+        content_hash="casan-preference",
+    )
+
+    result = match_user_to_notice(
+        user,
+        notice,
+        {
+            "celesc_scheduled": True,
+            "celesc_emergency": True,
+            "casan_water": False,
+            "defesa_civil_sc": False,
+        },
+    )
+
+    assert result.level == MatchLevel.NONE
+    assert result.reason == "User disabled this alert source."

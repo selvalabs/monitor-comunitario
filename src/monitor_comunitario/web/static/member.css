@@ -336,6 +336,19 @@ dd {
   margin-top: 1rem;
 }
 
+.alert-preference-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.alert-preference-form .checkbox {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  padding: 0.8rem;
+}
+
 .notification-card,
 .empty-state {
   border: 1px solid var(--border);

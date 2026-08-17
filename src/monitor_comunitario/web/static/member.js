@@ -3,6 +3,7 @@ const memberStatus = document.querySelector("#member-status");
 const memberPanel = document.querySelector("#member-panel");
 const clearSessionButton = document.querySelector("#clear-member-session");
 const memberNotifications = document.querySelector("#member-notifications");
+const memberPreferencesForm = document.querySelector("#member-preferences-form");
 const openDeleteButton = document.querySelector("#open-delete-member");
 const deleteConfirmation = document.querySelector("#delete-member-confirmation");
 const deleteAccessCode = document.querySelector("#delete-access-code");
@@ -104,8 +105,35 @@ function renderMemberSession(data) {
   document.querySelector("#member-neighborhood").textContent = user.neighborhood || "—";
   document.querySelector("#member-street").textContent = user.street || "—";
 
+  const preferences = data.preferences || {};
+  document.querySelectorAll("[data-member-alert-source]").forEach((input) => {
+    input.checked = Boolean(preferences[input.dataset.memberAlertSource]);
+  });
+
   renderNotifications(notifications || []);
   memberPanel.hidden = false;
+}
+
+async function saveMemberPreferences(event) {
+  event.preventDefault();
+  const preferences = {};
+  document.querySelectorAll("[data-member-alert-source]").forEach((input) => {
+    preferences[input.dataset.memberAlertSource] = input.checked;
+  });
+  const response = await fetch("/member/preferences", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": getCookieValue(memberCsrfCookieName),
+    },
+    body: JSON.stringify(preferences),
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body.detail || "NÃ£o foi possÃ­vel salvar as preferÃªncias.");
+  }
+  renderMemberSession(body);
+  setMemberStatus("PreferÃªncias salvas.");
 }
 
 async function accessMemberArea(payload) {
@@ -163,6 +191,10 @@ accessForm.addEventListener("submit", async (event) => {
 
 clearSessionButton.addEventListener("click", () => {
   logoutMember().catch((error) => setMemberStatus(error.message, true));
+});
+
+memberPreferencesForm?.addEventListener("submit", (event) => {
+  saveMemberPreferences(event).catch((error) => setMemberStatus(error.message, true));
 });
 
 openDeleteButton.addEventListener("click", () => {

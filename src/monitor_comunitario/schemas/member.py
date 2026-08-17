@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 from monitor_comunitario.schemas.notifications import NotificationRead
-from monitor_comunitario.schemas.users import UserRead
+from monitor_comunitario.schemas.users import AlertPreferences, UserRead
 
 
 class MemberAccessRequest(BaseModel):
@@ -14,6 +14,11 @@ class MemberDeleteRequest(BaseModel):
 
     access_code: str = Field(min_length=4, max_length=40)
 
+
+class MemberAlertPreferencesUpdate(AlertPreferences):
+    pass
+
 class MemberAccessRead(BaseModel):
     user: UserRead
     notifications: list[NotificationRead]
+    preferences: AlertPreferences
