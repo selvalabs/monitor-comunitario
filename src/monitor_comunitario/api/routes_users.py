@@ -65,6 +65,7 @@ def _normalize_phone(value: str) -> str:
 
 def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User, str]:
     access_code = generate_access_code()
+    alert_preferences = data.pop("alert_preferences", {})
     user_data = {
         key: value
         for key, value in data.items()
@@ -84,6 +85,10 @@ def _create_verified_user(session: Session, data: dict[str, Any]) -> tuple[User,
         access_code_created_at=utc_now(),
     )
     session.add(user)
+    session.flush()
+    from monitor_comunitario.services.alert_preferences import save_user_alert_preferences
+
+    save_user_alert_preferences(session, user.id, alert_preferences)
     session.commit()
     session.refresh(user)
     if not user.notifications_approved:

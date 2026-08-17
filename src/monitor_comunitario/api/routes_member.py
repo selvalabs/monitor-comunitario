@@ -11,10 +11,15 @@ from monitor_comunitario.db.session import get_session
 from monitor_comunitario.schemas.member import (
     MemberAccessRead,
     MemberAccessRequest,
+    MemberAlertPreferencesUpdate,
     MemberDeleteRequest,
 )
 from monitor_comunitario.schemas.notifications import NotificationRead
-from monitor_comunitario.schemas.users import UserRead
+from monitor_comunitario.schemas.users import AlertPreferences, UserRead
+from monitor_comunitario.services.alert_preferences import (
+    get_user_alert_preferences,
+    save_user_alert_preferences,
+)
 from monitor_comunitario.services.data_retention import purge_user_data
 from monitor_comunitario.services.member_access import verify_access_code
 from monitor_comunitario.services.member_session import (
@@ -41,6 +46,9 @@ def _member_read(session: Session, user: User) -> MemberAccessRead:
     return MemberAccessRead(
         user=UserRead.model_validate(user),
         notifications=_list_member_notifications(session=session, user_id=user.id),
+        preferences=AlertPreferences.model_validate(
+            get_user_alert_preferences(session, user.id)
+        ),
     )
 
 
@@ -176,6 +184,23 @@ def get_member_area(
     member_session: Annotated[str | None, Cookie(alias=MEMBER_SESSION_COOKIE_NAME)] = None,
 ) -> MemberAccessRead:
     return _member_read(session, _authenticated_member(session, member_session))
+
+
+@router.patch("/preferences", response_model=MemberAccessRead)
+def update_member_preferences(
+    payload: MemberAlertPreferencesUpdate,
+    session: SessionDep,
+    csrf_cookie: Annotated[str | None, Cookie(alias=MEMBER_CSRF_COOKIE_NAME)] = None,
+    csrf_header: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
+    member_session: Annotated[str | None, Cookie(alias=MEMBER_SESSION_COOKIE_NAME)] = None,
+) -> MemberAccessRead:
+    """Update alert source preferences for the authenticated member."""
+    _require_member_csrf(csrf_cookie, csrf_header)
+    user = _authenticated_member(session, member_session)
+    save_user_alert_preferences(session, user.id, payload.model_dump())
+    session.commit()
+    session.refresh(user)
+    return _member_read(session, user)
 
 
 @router.delete("/session", status_code=status.HTTP_204_NO_CONTENT)

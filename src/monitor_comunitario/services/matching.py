@@ -18,6 +18,11 @@ from monitor_comunitario.matcher.normalizer import (
     normalize_text,
 )
 from monitor_comunitario.matcher.scoring import MatchLevel, MatchResult, score_text
+from monitor_comunitario.services.alert_preferences import (
+    get_user_alert_preferences,
+    notice_alert_source,
+    user_accepts_notice,
+)
 from monitor_comunitario.services.hermes_events import create_hermes_event
 
 
@@ -59,13 +64,22 @@ def _exact_or_fuzzy_municipality_match(user: User, notice: OutageNotice) -> bool
     return score_text(user_municipality, notice_municipality) >= 92
 
 
-def match_user_to_notice(user: User, notice: OutageNotice) -> MatchResult:
+def match_user_to_notice(
+    user: User,
+    notice: OutageNotice,
+    alert_preferences: dict[str, bool] | None = None,
+) -> MatchResult:
     """Compare one user address against one outage notice."""
     if user.is_active is False:
         return MatchResult(MatchLevel.NONE, 0.0, "User is inactive.")
 
     if user.notifications_approved is False:
         return MatchResult(MatchLevel.NONE, 0.0, "User is not approved for notifications.")
+
+    if alert_preferences is not None:
+        source_key = notice_alert_source(notice)
+        if source_key is None or not alert_preferences.get(source_key, False):
+            return MatchResult(MatchLevel.NONE, 0.0, "User disabled this alert source.")
 
     if not _exact_or_fuzzy_municipality_match(user, notice):
         return MatchResult(MatchLevel.NONE, 0.0, "Municipality does not match.")
@@ -322,6 +336,8 @@ def create_resolution_notifications(
         user = session.get(User, match.user_id)
         if user is None or not user.is_active or not user.notifications_approved:
             continue
+        if not user_accepts_notice(session, user.id, notice):
+            continue
 
         initial = get_existing_notification(
             session,
@@ -393,8 +409,9 @@ def run_matching_cycle(session: Session) -> MatchingSummary:
     notifications_created = 0
 
     for user in users:
+        alert_preferences = get_user_alert_preferences(session, user.id)
         for notice in notices:
-            result = match_user_to_notice(user, notice)
+            result = match_user_to_notice(user, notice, alert_preferences)
 
             if result.level == MatchLevel.NONE:
                 continue

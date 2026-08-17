@@ -15,8 +15,15 @@ class UserBase(BaseModel):
     accept_municipality_wide_alerts: bool = True
 
 
+class AlertPreferences(BaseModel):
+    celesc_scheduled: bool = True
+    celesc_emergency: bool = True
+    casan_water: bool = True
+    defesa_civil_sc: bool = False
+
+
 class UserCreate(UserBase):
-    pass
+    alert_preferences: AlertPreferences = Field(default_factory=AlertPreferences)
 
 
 class RegistrationPendingRead(BaseModel):

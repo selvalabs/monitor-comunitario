@@ -235,6 +235,20 @@ Proxima acao: continuar com os incrementos de entrega Hermes previstos, sem habi
 - Celesc permanece sem notificacao de normalizacao enquanto sua fonte publica nao
   fornecer uma confirmacao explicita equivalente.
 
+## Atualizacao 2026-08-17 - preferencias por fonte
+
+- Issue: #193. Branch: `feat/alert-source-preferences`.
+- Implementada tabela `user_alert_preferences` com preferencias independentes
+  para Celesc programada, Celesc emergencial, CASAN e Defesa Civil SC.
+- O cadastro exibe checkboxes e a area do membro permite alterar as escolhas com
+  sessao HttpOnly e protecao CSRF. O matching e as notificacoes de normalizacao
+  respeitam a fonte habilitada.
+- Usuarios existentes preservam o comportamento atual de Celesc/CASAN e mantem
+  Defesa Civil desativada ate opt-in. Nenhum scraper da Defesa Civil foi incluido.
+- A migration `20260817_0008` cria a tabela sem dados pessoais adicionais.
+- Validacao local: `175 passed`, Ruff e Mypy limpos, Alembic em
+  `20260817_0008 (head)`. Nao houve deploy.
+
 ## Template para futuras atualizacoes
 
 ## Atualizacao de hardening 2026-08-12

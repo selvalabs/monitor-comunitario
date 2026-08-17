@@ -77,6 +77,28 @@ class User(Base):
     )
 
 
+class UserAlertPreference(Base):
+    __tablename__ = "user_alert_preferences"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "source_key",
+            name="uq_user_alert_preference_user_source",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    source_key: Mapped[str] = mapped_column(String(80), index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+    )
+
+
 class OutageNotice(Base):
     __tablename__ = "outage_notices"
 

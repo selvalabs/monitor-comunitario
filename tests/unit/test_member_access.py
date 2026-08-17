@@ -121,6 +121,12 @@ def test_member_access_succeeds_with_phone_and_access_code(client: TestClient) -
     assert body["user"]["id"] == created_user["id"]
     assert body["user"]["phone"] == phone
     assert body["notifications"] == []
+    assert body["preferences"] == {
+        "celesc_scheduled": True,
+        "celesc_emergency": True,
+        "casan_water": True,
+        "defesa_civil_sc": False,
+    }
     assert "monitor_member_session=" in access_response.headers["set-cookie"]
     assert "HttpOnly" in access_response.headers["set-cookie"]
     assert "SameSite=strict" in access_response.headers["set-cookie"]
@@ -128,6 +134,39 @@ def test_member_access_succeeds_with_phone_and_access_code(client: TestClient) -
     restored = client.get("/member/me")
     assert restored.status_code == 200
     assert restored.json()["user"]["id"] == created_user["id"]
+
+
+def test_member_can_update_alert_source_preferences(client: TestClient) -> None:
+    phone = unique_phone("0008")
+    create_response = client.post(
+        "/users",
+        json={
+            "name": "Preference Member",
+            "phone": phone,
+            "municipality": "FlorianÃ³polis",
+        },
+    )
+    access_code = create_response.json()["access_code"]
+    client.post("/member/access", json={"phone": phone, "access_code": access_code})
+
+    response = client.patch(
+        "/member/preferences",
+        headers={"X-CSRF-Token": client.cookies.get(MEMBER_CSRF_COOKIE_NAME)},
+        json={
+            "celesc_scheduled": True,
+            "celesc_emergency": False,
+            "casan_water": False,
+            "defesa_civil_sc": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["preferences"] == {
+        "celesc_scheduled": True,
+        "celesc_emergency": False,
+        "casan_water": False,
+        "defesa_civil_sc": True,
+    }
 
 
 def test_member_access_rejects_invalid_code(client: TestClient) -> None:

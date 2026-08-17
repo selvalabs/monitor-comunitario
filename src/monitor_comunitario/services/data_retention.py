@@ -3,7 +3,13 @@ import json
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from monitor_comunitario.db.models import HermesEvent, Notification, User, UserOutageMatch
+from monitor_comunitario.db.models import (
+    HermesEvent,
+    Notification,
+    User,
+    UserAlertPreference,
+    UserOutageMatch,
+)
 
 
 def purge_user_data(session: Session, user: User) -> None:
@@ -17,5 +23,6 @@ def purge_user_data(session: Session, user: User) -> None:
             session.delete(event)
 
     session.execute(delete(Notification).where(Notification.user_id == user.id))
+    session.execute(delete(UserAlertPreference).where(UserAlertPreference.user_id == user.id))
     session.execute(delete(UserOutageMatch).where(UserOutageMatch.user_id == user.id))
     session.delete(user)

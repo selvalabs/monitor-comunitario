@@ -59,6 +59,10 @@ function setRecentRegistration(user) {
 
 function formToPayload(formElement) {
   const data = new FormData(formElement);
+  const alertPreferences = {};
+  document.querySelectorAll("[data-alert-source]").forEach((input) => {
+    alertPreferences[input.dataset.alertSource] = input.checked;
+  });
 
   return {
     name: String(data.get("name") || "").trim(),
@@ -70,6 +74,7 @@ function formToPayload(formElement) {
     number: String(data.get("number") || "").trim(),
     zipcode: String(data.get("zipcode") || "").trim(),
     accept_municipality_wide_alerts: data.get("accept_municipality_wide_alerts") === "on",
+    alert_preferences: alertPreferences,
   };
 }
 
